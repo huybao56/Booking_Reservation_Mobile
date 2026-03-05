@@ -97,10 +97,10 @@ class MainActivity : ComponentActivity() {
 
         val staffViewModel = StaffViewModel()
         // ViewModels — Staff (thay thế staffViewModel cũ)
-        val staffDashboardViewModel = StaffDashboardViewModel(staffApi)
-        val staffBookingsViewModel = StaffBookingsViewModel()
-        val staffRoomsViewModel = StaffRoomsViewModel()
-        val staffChatViewModel = StaffChatViewModel()
+        val staffDashboardViewModel = StaffDashboardViewModel(preferencesManager,staffApi)
+        val staffBookingsViewModel = StaffBookingsViewModel(staffApi)
+        val staffRoomsViewModel = StaffRoomsViewModel(staffApi)
+        val staffChatViewModel = StaffChatViewModel(staffApi)
 
         setContent {
             Project_GraduationTheme {
@@ -128,6 +128,7 @@ class MainActivity : ComponentActivity() {
                         roomDetailViewModel = roomDetailViewModel,
 
                         staffViewModel = staffViewModel,
+                        staffApi = staffApi,
                         staffDashboardViewModel = staffDashboardViewModel,
                         staffBookingsViewModel = staffBookingsViewModel,
                         staffRoomsViewModel = staffRoomsViewModel,

@@ -1,10 +1,12 @@
 package com.example.project_graduation.data.remote.api
 
+import android.util.Log
 import com.example.project_graduation.data.remote.ApiConfig
 import com.example.project_graduation.data.remote.dto.LoginRequest
 import com.example.project_graduation.data.remote.dto.LoginResponse
 import com.example.project_graduation.data.remote.dto.RegisterRequest
 import com.example.project_graduation.data.remote.dto.RegisterResponse
+import com.example.project_graduation.data.remote.dto.StaffInfoDto
 import com.example.project_graduation.data.remote.dto.UserDto
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -26,7 +28,7 @@ class AuthApi {
     suspend fun login(email: String, password: String): Result<LoginResponse> =
         withContext(Dispatchers.IO) {
             try {
-
+                Log.d("AuthApi", "login() called — email=$email")
 //                build json
                 val json = JSONObject().apply {
                     put("email", email)
@@ -46,6 +48,10 @@ class AuthApi {
 //                response request
                 val response = client.newCall(request).execute()
                 val responseBody = response.body?.string() ?: ""
+
+
+                Log.d("AuthApi", "HTTP ${response.code}")
+                Log.d("AuthApi", "Body: $responseBody")
 
 //                status http 200-299
                 if (response.isSuccessful) {
@@ -71,13 +77,33 @@ class AuthApi {
                             )
                         }
 
+                        Log.d("AuthApi", "user: userId=${userDto?.userId}  role=${userDto?.role}")
+
+// ── Parse staffInfo (chỉ có khi role=STAFF) ─────────────
+                        val staffJson = jsonResponse.optJSONObject("staffInfo")
+                        val staffInfoDto = staffJson?.let {
+                            StaffInfoDto(
+                                staffId = it.getInt("staffId"),
+                                hotelId = it.getInt("hotelId"),
+                                hotelName = it.getString("hotelName"),
+                                position = it.getString("position"),
+                                canChat = it.getBoolean("canChat")
+                            )
+                        }
+                        Log.d(
+                            "AuthApi",
+                            "  staffInfo: ${if (staffInfoDto != null) "staffId=${staffInfoDto.staffId}  hotel=${staffInfoDto.hotelName}" else "null (not STAFF)"}"
+                        )
+
+
 //                        build json result
                         Result.success(
                             LoginResponse(
                                 success = true,
                                 message = message,
                                 token = token,
-                                user = userDto
+                                user = userDto,
+                                staffInfo = staffInfoDto
                             )
                         )
                     } else {

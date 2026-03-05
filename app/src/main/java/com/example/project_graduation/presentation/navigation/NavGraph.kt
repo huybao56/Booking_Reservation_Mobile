@@ -19,6 +19,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.project_graduation.data.local.PreferencesManager
+import com.example.project_graduation.data.remote.api.StaffApi
 import com.example.project_graduation.domain.model.Room
 import com.example.project_graduation.domain.model.UserRole
 import com.example.project_graduation.presentation.admin.AdminScreen
@@ -186,6 +187,7 @@ fun NavGraph(
     roomDetailViewModel: RoomDetailViewModel,
 
     staffViewModel: StaffViewModel,
+    staffApi: StaffApi,
     staffDashboardViewModel: StaffDashboardViewModel,
     staffBookingsViewModel: StaffBookingsViewModel,
     staffRoomsViewModel: StaffRoomsViewModel,
@@ -852,19 +854,37 @@ fun NavGraph(
 //                }
 //            }
 
+//            LaunchedEffect(Unit) {
+//                val hotelId = staffDashboardViewModel.profile.value.hotelId
+//                if (hotelId > 0) {
+//                    staffBookingsViewModel.loadBookings(hotelId)
+//                    staffRoomsViewModel.loadRooms(hotelId)
+//                    // Init chat nếu chưa có conversations (resume từ background)
+//                    val user = preferencesManager.getUser()
+//                    if (staffChatViewModel.conversations.value.isEmpty() && user != null) {
+//                        val staffInfo = preferencesManager.getStaffInfo()
+//                        if (staffInfo != null) {
+//                            staffChatViewModel.init(staffInfo.staffId, user.username, staffInfo.hotelId)
+//                        }
+//                    }
+//                }
+//            }
+            // Khi vào Staff screen: đọc thông tin từ DataStore (đã save lúc login)
+            // rồi load dashboard stats, bookings, rooms, conversations
             LaunchedEffect(Unit) {
-                val hotelId = staffDashboardViewModel.profile.value.hotelId
-                if (hotelId > 0) {
-                    staffBookingsViewModel.loadBookings(hotelId)
-                    staffRoomsViewModel.loadRooms(hotelId)
-                    // Init chat nếu chưa có conversations (resume từ background)
-                    val user = preferencesManager.getUser()
-                    if (staffChatViewModel.conversations.value.isEmpty() && user != null) {
-                        val staffInfo = preferencesManager.getStaffInfo()
-                        if (staffInfo != null) {
-                            staffChatViewModel.init(staffInfo.staffId, user.username, staffInfo.hotelId)
-                        }
-                    }
+                val staffLocal = preferencesManager.getStaffInfo()
+                val user       = preferencesManager.getUser()
+
+                if (staffLocal != null && user != null) {
+                    staffDashboardViewModel.initFromPrefs()
+
+                    staffBookingsViewModel.loadBookings(staffLocal.hotelId)
+                    staffRoomsViewModel.loadRooms(staffLocal.hotelId)
+                    staffChatViewModel.init(
+                        staffId   = user.userId,
+                        staffName = user.username,
+                        hotelId   = staffLocal.hotelId
+                    )
                 }
             }
 

@@ -1,5 +1,6 @@
 package com.example.project_graduation.data.repository
 
+import android.util.Log
 import com.example.project_graduation.data.mapper.toDomain
 import com.example.project_graduation.data.remote.api.AuthApi
 import com.example.project_graduation.domain.model.User
@@ -13,6 +14,7 @@ class AuthRepositoryImpl(
 
     override suspend fun login(email: String, password: String): Result<Pair<String, User>> {
         return try {
+            Log.d("AuthRepo", "login() — email=$email")
             val result = authApi.login(email, password)
 
             result.fold(
@@ -21,6 +23,20 @@ class AuthRepositoryImpl(
                         val user = response.user.toDomain()
 //                        save user
                         preferencesManager.saveUser(response.token, user)
+                        // ── Save staffInfo nếu là STAFF ──────────────────────
+                        val staffInfo = response.staffInfo
+                        if (staffInfo != null) {
+                            preferencesManager.saveStaffInfo(
+                                staffId   = staffInfo.staffId,
+                                hotelId   = staffInfo.hotelId,
+                                hotelName = staffInfo.hotelName,
+                                position  = staffInfo.position,
+                                canChat   = staffInfo.canChat
+                            )
+                            Log.d("AuthRepo", "saveStaffInfo: staffId=${staffInfo.staffId}  hotel=${staffInfo.hotelName}  position=${staffInfo.position}")
+                        } else {
+                            Log.d("AuthRepo", "staffInfo null, không phải STAFF hoặc backend chưa trả về")
+                        }
                         Result.success(Pair(response.token, user))
 //                        Result.success(Pair(response.token, response.user.toDomain()))
                     } else {

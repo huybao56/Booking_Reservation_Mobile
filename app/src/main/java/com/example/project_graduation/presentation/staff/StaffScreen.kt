@@ -144,7 +144,7 @@ fun StaffScreen(
                 0 -> StaffDashboardContent(dashboardViewModel, bookingsViewModel)
                 1 -> StaffBookingsContent(bookingsViewModel)
                 2 -> StaffRoomsContent(roomsViewModel)
-                3 -> StaffChatScreen(staffViewModel)
+                3 -> StaffChatScreen(chatViewModel)
                 4 -> StaffProfileContent(dashboardViewModel, profileViewModel, onLogout)
             }
         }

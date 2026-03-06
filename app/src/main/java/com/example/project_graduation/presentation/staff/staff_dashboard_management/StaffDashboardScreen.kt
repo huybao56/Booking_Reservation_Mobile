@@ -185,7 +185,7 @@ fun StaffDashboardContent(
                     Column {
                         Text("Revenue's Month", fontSize = 13.sp, color = Color.Gray)
                         Text(
-                            formatVND(stats.totalRevenue),
+                            "${stats.totalRevenue}$",
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF1A1A1A)
@@ -246,13 +246,13 @@ fun StaffStatCard(
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(
-            Modifier.padding(14.dp),
+            Modifier.padding(14.dp).fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
-                Modifier.padding(14.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                Modifier.padding(10.dp).fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
@@ -273,13 +273,4 @@ fun StaffStatCard(
 }
 
 
-// ============= HELPERS =============
-
-private fun formatVND(amount: Double): String {
-    return if (amount >= 1_000_000) {
-        "${"%.1f".format(amount / 1_000_000)}M VNĐ"
-    } else {
-        "${(amount / 1000).toInt()}K VNĐ"
-    }
-}
 

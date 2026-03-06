@@ -762,9 +762,9 @@ fun StaffChatListScreen(
                         )
                     } else {
                         Column {
-                            Text("Chat với Khách Hàng", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
+                            Text("Chat with Customer", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
                             if (totalUnread > 0)
-                                Text("$totalUnread tin chưa đọc", fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
+                                Text("$totalUnread unread message", fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
                         }
                     }
                 },
@@ -981,7 +981,7 @@ fun StaffChatDetailScreen(
                         OutlinedTextField(
                             value         = inputText,
                             onValueChange = { inputText = it },
-                            placeholder   = { Text("Nhập tin nhắn hỗ trợ...", color = Color.Gray, fontSize = 14.sp) },
+                            placeholder   = { Text("Enter support message...", color = Color.Gray, fontSize = 14.sp) },
                             modifier      = Modifier.weight(1f),
                             shape         = RoundedCornerShape(24.dp),
                             maxLines      = 4,

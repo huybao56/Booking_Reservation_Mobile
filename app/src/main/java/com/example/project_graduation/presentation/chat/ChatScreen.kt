@@ -2,6 +2,7 @@ package com.example.project_graduation.presentation.chat
 
 //@file:OptIn(ExperimentalMaterial3Api::class)
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -59,7 +60,7 @@ data class ChatConversation(
 
 @Composable
 fun ChatListScreen(
-    conversations: List<ChatConversation> = getSampleConversations(),
+    conversations: List<ChatConversation> = emptyList(),
     onConversationClick: (ChatConversation) -> Unit = {},
     onBack: () -> Unit = {}
 ) {
@@ -150,67 +151,116 @@ fun ChatListScreen(
 
 @Composable
 fun ChatScreen(
+    chatViewModel: ChatViewModel,
     onBack: () -> Unit = {}
 ) {
-    // State để track conversation nào đang được chọn
-    var selectedConversation by remember { mutableStateOf<ChatConversation?>(null) }
-
-    // State để lưu messages của conversation đang chọn
-    var currentMessages by remember { mutableStateOf<List<ChatMessage>>(emptyList()) }
+    // Observe states từ ViewModel
+    val conversations by chatViewModel.conversations.collectAsState()
+    val currentConversation by chatViewModel.currentConversation.collectAsState()
+    val currentMessages by chatViewModel.currentMessages.collectAsState()
+    val isLoading by chatViewModel.isLoading.collectAsState()
+    val error by chatViewModel.error.collectAsState()
 
     // Nếu chưa chọn conversation nào -> hiển thị ChatListScreen
-    if (selectedConversation == null) {
+    if (currentConversation == null) {
         ChatListScreen(
-            conversations = getSampleConversations(),
+            conversations = conversations,
             onConversationClick = { conversation ->
-//                // Khi click vào conversation:
-//                // 1. Set conversation đang chọn
-//                selectedConversation = conversation
-//
-//                // 2. Load messages tương ứng với hotel
-//                currentMessages = when (conversation.id) {
-//                    "1" -> getSampleMessages() // Grand Palace Hotel
-//                    "2" -> getSampleMessagesBeachResort()
-//                    "3" -> getSampleMessagesMountainLodge()
-//                    "4" -> getSampleMessagesCityCenter()
-//                    else -> getSampleMessages()
-//                }
-
-                // Khi click:
-                selectedConversation = conversation // ← Set conversation
-                currentMessages = getMessagesByConversationId(conversation.id) // ← Load messages
+                chatViewModel.openConversation(conversation)
             },
             onBack = onBack
         )
     } else {
         // Nếu đã chọn conversation -> hiển thị ChatDetailScreen
         ChatDetailScreen(
-            conversation = selectedConversation!!,
+            conversation = currentConversation!!,
             messages = currentMessages,
             onBack = {
-                // Khi click back -> clear selection và quay về list
-                selectedConversation = null
-                currentMessages = emptyList()
+                chatViewModel.closeConversation()
             },
             onSendMessage = { messageText ->
-                // Khi gửi message mới
-                val newMessage = ChatMessage(
-                    senderId = "current_user",
-                    senderName = "You",
-                    message = messageText,
-                    timestamp = System.currentTimeMillis(),
-                    isFromCurrentUser = true,
-                    status = MessageStatus.SENDING
-                )
-
-                // Thêm message vào list
-                currentMessages = currentMessages + newMessage
-
-                // TODO: Gửi message lên server qua API
-                // api.sendMessage(selectedConversation!!.id, messageText)
+                chatViewModel.sendMessage(messageText)
             }
         )
     }
+
+    // Show loading overlay
+    if (isLoading) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = Color(0xFF2196F3))
+        }
+    }
+
+    // Show error (optional - có thể dùng Snackbar)
+    error?.let { errorMessage ->
+        LaunchedEffect(errorMessage) {
+            Log.e("ChatScreen", "Error: $errorMessage")
+            // TODO: Show Snackbar hoặc Dialog
+        }
+    }
+
+//    // State để track conversation nào đang được chọn
+//    var selectedConversation by remember { mutableStateOf<ChatConversation?>(null) }
+//
+//    // State để lưu messages của conversation đang chọn
+//    var currentMessages by remember { mutableStateOf<List<ChatMessage>>(emptyList()) }
+//
+//    // Nếu chưa chọn conversation nào -> hiển thị ChatListScreen
+//    if (selectedConversation == null) {
+//        ChatListScreen(
+//            conversations = getSampleConversations(),
+//            onConversationClick = { conversation ->
+////                // Khi click vào conversation:
+////                // 1. Set conversation đang chọn
+////                selectedConversation = conversation
+////
+////                // 2. Load messages tương ứng với hotel
+////                currentMessages = when (conversation.id) {
+////                    "1" -> getSampleMessages() // Grand Palace Hotel
+////                    "2" -> getSampleMessagesBeachResort()
+////                    "3" -> getSampleMessagesMountainLodge()
+////                    "4" -> getSampleMessagesCityCenter()
+////                    else -> getSampleMessages()
+////                }
+//
+//                // Khi click:
+//                selectedConversation = conversation // ← Set conversation
+//                currentMessages = getMessagesByConversationId(conversation.id) // ← Load messages
+//            },
+//            onBack = onBack
+//        )
+//    } else {
+//        // Nếu đã chọn conversation -> hiển thị ChatDetailScreen
+//        ChatDetailScreen(
+//            conversation = selectedConversation!!,
+//            messages = currentMessages,
+//            onBack = {
+//                // Khi click back -> clear selection và quay về list
+//                selectedConversation = null
+//                currentMessages = emptyList()
+//            },
+//            onSendMessage = { messageText ->
+//                // Khi gửi message mới
+//                val newMessage = ChatMessage(
+//                    senderId = "current_user",
+//                    senderName = "You",
+//                    message = messageText,
+//                    timestamp = System.currentTimeMillis(),
+//                    isFromCurrentUser = true,
+//                    status = MessageStatus.SENDING
+//                )
+//
+//                // Thêm message vào list
+//                currentMessages = currentMessages + newMessage
+//
+//                // TODO: Gửi message lên server qua API
+//                // api.sendMessage(selectedConversation!!.id, messageText)
+//            }
+//        )
+//    }
 }
 
 
@@ -337,7 +387,7 @@ fun ChatConversationItem(
 @Composable
 fun ChatDetailScreen(
     conversation: ChatConversation,
-    messages: List<ChatMessage> = getSampleMessages(),
+    messages: List<ChatMessage> = emptyList(),
     onBack: () -> Unit = {},
     onSendMessage: (String) -> Unit = {}
 ) {

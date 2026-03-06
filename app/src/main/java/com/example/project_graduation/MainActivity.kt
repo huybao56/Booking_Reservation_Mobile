@@ -41,6 +41,7 @@ import com.example.project_graduation.presentation.register.RegisterViewModel
 import com.example.project_graduation.presentation.room_detail.RoomDetailViewModel
 import com.example.project_graduation.presentation.staff.StaffViewModel
 import com.example.project_graduation.data.remote.api.StaffApi
+import com.example.project_graduation.presentation.chat.ChatViewModel
 import com.example.project_graduation.presentation.staff.staff_booking_management.StaffBookingsViewModel
 import com.example.project_graduation.presentation.staff.staff_chat_management.StaffChatViewModel
 import com.example.project_graduation.presentation.staff.staff_dashboard_management.StaffDashboardViewModel
@@ -95,7 +96,11 @@ class MainActivity : ComponentActivity() {
         val roomDetailViewModel = RoomDetailViewModel(roomRepository)
 
 
+
         val staffViewModel = StaffViewModel()
+
+        val chatViewModel = ChatViewModel(userApi)
+
         // ViewModels — Staff (thay thế staffViewModel cũ)
         val staffDashboardViewModel = StaffDashboardViewModel(preferencesManager,staffApi)
         val staffBookingsViewModel = StaffBookingsViewModel(staffApi)
@@ -132,7 +137,9 @@ class MainActivity : ComponentActivity() {
                         staffDashboardViewModel = staffDashboardViewModel,
                         staffBookingsViewModel = staffBookingsViewModel,
                         staffRoomsViewModel = staffRoomsViewModel,
-                        staffChatViewModel = staffChatViewModel
+                        staffChatViewModel = staffChatViewModel,
+
+                        chatViewModel = chatViewModel
                     )
                 }
             }

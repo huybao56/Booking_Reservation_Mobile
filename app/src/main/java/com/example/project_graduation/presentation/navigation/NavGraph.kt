@@ -29,6 +29,7 @@ import com.example.project_graduation.presentation.admin.room_management.RoomsMa
 import com.example.project_graduation.presentation.admin.room_management.RoomsManagementViewModel
 import com.example.project_graduation.presentation.admin.user_management.UsersManagementViewModel
 import com.example.project_graduation.presentation.booking.BookingScreen
+import com.example.project_graduation.presentation.chat.ChatViewModel
 import com.example.project_graduation.presentation.room.RoomListScreen
 import com.example.project_graduation.presentation.room.RoomListViewModel
 import com.example.project_graduation.presentation.home.HomeScreen
@@ -191,7 +192,9 @@ fun NavGraph(
     staffDashboardViewModel: StaffDashboardViewModel,
     staffBookingsViewModel: StaffBookingsViewModel,
     staffRoomsViewModel: StaffRoomsViewModel,
-    staffChatViewModel: StaffChatViewModel
+    staffChatViewModel: StaffChatViewModel,
+    chatViewModel: ChatViewModel
+
 ) {
     // Check if logged in
     var startDestination by remember { mutableStateOf<String?>(null) }
@@ -296,11 +299,15 @@ fun NavGraph(
                     // Lấy user từ preferences
                     val user = runBlocking { preferencesManager.getUser() }
 
+
                     Log.d(
                         "ContentValues",
                         "Login successful: ${user?.username}, Role: ${user?.role}"
                     )
 
+                    if (user != null) {
+                        chatViewModel.init(user.userId, user.username)
+                    }
 //                    // Navigate based on role
 //                    val destination = if (user?.isAdmin() == true) {
 //                        Screen.Admin.route
@@ -349,6 +356,7 @@ fun NavGraph(
 
         composable(Screen.MainUser.route) {
             MainUserScreen(
+                chatViewModel = chatViewModel,
                 homeViewModel = homeViewModel,
                 profileViewModel = profileViewModel,
                 preferencesManager = preferencesManager,

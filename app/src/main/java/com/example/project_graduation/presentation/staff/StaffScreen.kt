@@ -104,7 +104,7 @@ fun StaffScreen(
         bottomBar = {
             NavigationBar(containerColor = Color.White, tonalElevation = 8.dp) {
                 listOf(
-                    Triple(0, Icons.Default.Dashboard, "Dashboard"),
+                    Triple(0, Icons.Default.Dashboard, "Home"),
                     Triple(1, Icons.Default.BookOnline, "Bookings"),
                     Triple(2, Icons.Default.MeetingRoom, "Rooms"),
                     Triple(3, Icons.Default.Chat, "Chat"),

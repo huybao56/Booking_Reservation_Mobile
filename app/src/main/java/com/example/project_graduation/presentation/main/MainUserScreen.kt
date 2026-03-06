@@ -27,6 +27,7 @@ import com.example.project_graduation.data.local.PreferencesManager
 import com.example.project_graduation.presentation.booking.BookingScreen
 import com.example.project_graduation.presentation.chat.ChatListScreen
 import com.example.project_graduation.presentation.chat.ChatScreen
+import com.example.project_graduation.presentation.chat.ChatViewModel
 import com.example.project_graduation.presentation.home.HomeScreen
 import com.example.project_graduation.presentation.home.HomeViewModel
 import com.example.project_graduation.presentation.profile.ProfileScreen
@@ -34,6 +35,7 @@ import com.example.project_graduation.presentation.profile.ProfileViewModel
 
 @Composable
 fun MainUserScreen(
+    chatViewModel: ChatViewModel,
     homeViewModel: HomeViewModel,
     profileViewModel: ProfileViewModel,
     preferencesManager: PreferencesManager,
@@ -131,23 +133,23 @@ fun MainUserScreen(
                     selected = selectedTab == 2,
                     onClick = { selectedTab = 2 },
                     icon = {
-                        BadgedBox(
-                            badge = {
-                                // Hiển thị badge khi có tin nhắn chưa đọc
-                                if (selectedTab != 2) {
-                                    Badge(
-                                        containerColor = Color(0xFFFF5252)
-                                    ) {
-                                        Text("3") // Số tin nhắn chưa đọc (sau này sẽ lấy từ ViewModel)
-                                    }
-                                }
-                            }
-                        ) {
+//                        BadgedBox(
+//                            badge = {
+//                                // Hiển thị badge khi có tin nhắn chưa đọc
+//                                if (selectedTab != 2) {
+//                                    Badge(
+//                                        containerColor = Color(0xFFFF5252)
+//                                    ) {
+//                                        Text("3") // Số tin nhắn chưa đọc (sau này sẽ lấy từ ViewModel)
+//                                    }
+//                                }
+//                            }
+//                        ) {
                             Icon(
                                 Icons.Default.ChatBubble,
                                 contentDescription = "Chat"
                             )
-                        }
+//                        }
                     },
                     label = { Text("Chat") },
                     colors = NavigationBarItemDefaults.colors(
@@ -202,6 +204,7 @@ fun MainUserScreen(
 //                )
 
                 2 -> ChatScreen(
+                    chatViewModel = chatViewModel,
                     onBack = { selectedTab = 0 },
 //                    onConversationClick = { conversation ->
 //                        // TODO: Navigate to chat detail screen

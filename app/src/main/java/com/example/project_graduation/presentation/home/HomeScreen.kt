@@ -1,73 +1,3 @@
-//package com.example.project_graduation.presentation.home
-//
-//import androidx.compose.foundation.background
-//import androidx.compose.foundation.layout.*
-//import androidx.compose.foundation.shape.RoundedCornerShape
-//import androidx.compose.material.icons.Icons
-//import androidx.compose.material.icons.filled.CheckCircle
-//import androidx.compose.material3.*
-//import androidx.compose.runtime.Composable
-//import androidx.compose.ui.Alignment
-//import androidx.compose.ui.Modifier
-//import androidx.compose.ui.graphics.Color
-//import androidx.compose.ui.text.font.FontWeight
-//import androidx.compose.ui.text.style.TextAlign
-//import androidx.compose.ui.unit.dp
-//import androidx.compose.ui.unit.sp
-//
-//@Composable
-//fun HomeScreen(
-//    onLogout: () -> Unit
-//) {
-//    Column(
-//        modifier = Modifier
-//            .fillMaxSize()
-//            .background(Color(0xFFF5F5F5))
-//            .padding(24.dp),
-//        horizontalAlignment = Alignment.CenterHorizontally,
-//        verticalArrangement = Arrangement.Center
-//    ) {
-//        Icon(
-//            imageVector = Icons.Default.CheckCircle,
-//            contentDescription = null,
-//            modifier = Modifier.size(120.dp),
-//            tint = Color(0xFF4CAF50)
-//        )
-//
-//        Spacer(modifier = Modifier.height(24.dp))
-//
-//        Text(
-//            text = "Login Successful!",
-//            fontSize = 28.sp,
-//            fontWeight = FontWeight.Bold,
-//            color = Color(0xFF333333)
-//        )
-//
-//        Spacer(modifier = Modifier.height(16.dp))
-//
-//        Text(text = "Welcome to the application",
-//            fontSize = 16.sp,
-//            color = Color(0xFF666666),
-//            textAlign = TextAlign.Center
-//        )
-//
-//        Spacer(modifier = Modifier.height(48.dp))
-//
-//        Button(
-//            onClick = onLogout,
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .height(56.dp),
-//            shape = RoundedCornerShape(12.dp),
-//            colors = ButtonDefaults.buttonColors(
-//                containerColor = Color(0xFF667eea)
-//            )
-//        ) {
-//            Text("Logout", fontSize = 16.sp)
-//        }
-//    }
-//}
-
 package com.example.project_graduation.presentation.home
 
 import android.util.Log
@@ -108,11 +38,9 @@ fun HomeScreen(
     viewModel: HomeViewModel,
     profileViewModel: ProfileViewModel,
     onNavigateToProfile: (() -> Unit)? = null,
-//    onNavigateToProfile: () -> Unit,
     onNavigateToHotelDetail: (Int) -> Unit,
     onLogout: () -> Unit
 ) {
-    var selectedCategory by remember { mutableStateOf("Home") }
     val hotels by viewModel.hotels.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val searchCriteria by viewModel.searchCriteria.collectAsState()
@@ -309,125 +237,6 @@ fun HomeScreen(
 }
 
 
-//@Composable
-//fun CategoryCard(
-//    icon: ImageVector,
-//    label: String,
-//    isSelected: Boolean,
-//    onClick: () -> Unit
-//) {
-//    Button(
-//        onClick = onClick,
-//        colors = ButtonDefaults.buttonColors(
-//            containerColor = if (isSelected) Color(0xFF2196F3) else Color(0xFFF5F5F5),
-//            contentColor = if (isSelected) Color.White else Color.Gray
-//        ),
-//        shape = RoundedCornerShape(12.dp),
-//        modifier = Modifier
-//            .height(48.dp)
-//            .widthIn(min = 100.dp),
-//        contentPadding = PaddingValues(horizontal = 16.dp)
-//    ) {
-//        Icon(
-//            imageVector = icon,
-//            contentDescription = null,
-//            modifier = Modifier.size(20.dp)
-//        )
-//        Spacer(modifier = Modifier.width(8.dp))
-//        Text(label, fontSize = 14.sp)
-//    }
-//}
-//
-//@Composable
-//fun PropertyCard(property: Property) {
-//    Card(
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .height(240.dp),
-//        shape = RoundedCornerShape(16.dp),
-//        elevation = CardDefaults.cardElevation(4.dp)
-//    ) {
-//        Box(modifier = Modifier.fillMaxSize()) {
-//            Box(
-//                modifier = Modifier
-//                    .fillMaxSize()
-//                    .background(Color(0xFFE0E0E0))
-//            )
-//
-//            Column(
-//                modifier = Modifier
-//                    .fillMaxSize()
-//                    .padding(16.dp)
-//            ) {
-//                Row(
-//                    modifier = Modifier.fillMaxWidth(),
-//                    horizontalArrangement = Arrangement.SpaceBetween
-//                ) {
-//                    Row(
-//                        verticalAlignment = Alignment.CenterVertically,
-//                        modifier = Modifier
-//                            .background(Color.White.copy(alpha = 0.9f), RoundedCornerShape(20.dp))
-//                            .padding(horizontal = 12.dp, vertical = 6.dp)
-//                    ) {
-//                        Icon(
-//                            imageVector = Icons.Default.LocationOn,
-//                            contentDescription = null,
-//                            tint = Color.Gray,
-//                            modifier = Modifier.size(16.dp)
-//                        )
-//                        Spacer(modifier = Modifier.width(4.dp))
-//                        Text(
-//                            text = property.location,
-//                            fontSize = 12.sp,
-//                            color = Color.Gray
-//                        )
-//                    }
-//
-//                    IconButton(
-//                        onClick = { },
-//                        modifier = Modifier
-//                            .size(36.dp)
-//                            .background(Color.White.copy(alpha = 0.9f), CircleShape)
-//                    ) {
-//                        Icon(
-//                            imageVector = if (property.isFavorite) Icons.Default.Favorite
-//                            else Icons.Default.FavoriteBorder,
-//                            contentDescription = null,
-//                            tint = if (property.isFavorite) Color.Red else Color.Gray,
-//                            modifier = Modifier.size(20.dp)
-//                        )
-//                    }
-//                }
-//
-//                Spacer(modifier = Modifier.weight(1f))
-//
-//                Column(
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .background(
-//                            Color.White.copy(alpha = 0.95f),
-//                            RoundedCornerShape(12.dp)
-//                        )
-//                        .padding(12.dp)
-//                ) {
-//                    Text(
-//                        text = property.name,
-//                        fontSize = 16.sp,
-//                        fontWeight = FontWeight.Bold,
-//                        color = Color.Black
-//                    )
-//                    Spacer(modifier = Modifier.height(4.dp))
-//                    Text(
-//                        text = property.price,
-//                        fontSize = 18.sp,
-//                        fontWeight = FontWeight.Bold,
-//                        color = Color(0xFF2196F3)
-//                    )
-//                }
-//            }
-//        }
-//    }
-//}
 
 @Composable
 fun HotelCard(
@@ -1046,100 +855,6 @@ private fun GuestSelector(
     }
 }
 
-//@Composable
-//private fun SimpleDatePickerDialog(
-//    title: String,
-//    currentDate: LocalDate,
-//    minDate: LocalDate? = null,
-//    onDateSelected: (LocalDate) -> Unit,
-//    onDismiss: () -> Unit
-//) {
-//    var selectedDate by remember { mutableStateOf(currentDate) }
-//
-//    AlertDialog(
-//        onDismissRequest = onDismiss,
-//        title = { Text(title, fontWeight = FontWeight.Bold) },
-//        text = {
-//            Column(
-//                modifier = Modifier.fillMaxWidth(),
-//                horizontalAlignment = Alignment.CenterHorizontally
-//            ) {
-//                Row(
-//                    modifier = Modifier.fillMaxWidth(),
-//                    horizontalArrangement = Arrangement.SpaceEvenly,
-//                    verticalAlignment = Alignment.CenterVertically
-//                ) {
-//                    IconButton(
-//                        onClick = {
-//                            val newDate = selectedDate.minusDays(1)
-//                            if (minDate == null || !newDate.isBefore(minDate)) {
-//                                selectedDate = newDate
-//                            }
-//                        }
-//                    ) {
-//                        Icon(Icons.Default.ChevronLeft, "Previous day")
-//                    }
-//
-//                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-//                        Text(
-//                            text = selectedDate.format(DateTimeFormatter.ofPattern("MMMM yyyy")),
-//                            fontSize = 14.sp,
-//                            color = Color.Gray
-//                        )
-//                        Spacer(modifier = Modifier.height(4.dp))
-//                        Text(
-//                            text = selectedDate.format(DateTimeFormatter.ofPattern("dd")),
-//                            fontSize = 32.sp,
-//                            fontWeight = FontWeight.Bold,
-//                            color = Color(0xFF2196F3)
-//                        )
-//                        Text(
-//                            text = selectedDate.format(DateTimeFormatter.ofPattern("EEEE")),
-//                            fontSize = 14.sp,
-//                            color = Color.Gray
-//                        )
-//                    }
-//
-//                    IconButton(
-//                        onClick = { selectedDate = selectedDate.plusDays(1) }
-//                    ) {
-//                        Icon(Icons.Default.ChevronRight, "Next day")
-//                    }
-//                }
-//
-//                Spacer(modifier = Modifier.height(16.dp))
-//
-//                Row(
-//                    modifier = Modifier.fillMaxWidth(),
-//                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-//                ) {
-//                    OutlinedButton(
-//                        onClick = { selectedDate = LocalDate.now() },
-//                        modifier = Modifier.weight(1f)
-//                    ) {
-//                        Text("Today", fontSize = 12.sp)
-//                    }
-//                    OutlinedButton(
-//                        onClick = { selectedDate = LocalDate.now().plusDays(1) },
-//                        modifier = Modifier.weight(1f)
-//                    ) {
-//                        Text("Tomorrow", fontSize = 12.sp)
-//                    }
-//                }
-//            }
-//        },
-//        confirmButton = {
-//            TextButton(onClick = { onDateSelected(selectedDate) }) {
-//                Text("OK", color = Color(0xFF2196F3))
-//            }
-//        },
-//        dismissButton = {
-//            TextButton(onClick = onDismiss) {
-//                Text("Cancel")
-//            }
-//        }
-//    )
-//}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -1197,6 +912,7 @@ private fun CalendarDatePickerDialog(
     ) {
         DatePicker(
             state = datePickerState,
+            showModeToggle = false,
             title = {
                 Text(
                     text = title,

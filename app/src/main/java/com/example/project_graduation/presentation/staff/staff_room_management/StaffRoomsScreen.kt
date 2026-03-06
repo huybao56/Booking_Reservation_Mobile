@@ -42,8 +42,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+
 //import com.example.project_graduation.presentation.staff.StaffRoom
 //import com.example.project_graduation.presentation.staff.StaffViewModel
 
@@ -53,16 +55,6 @@ private val PrimaryDk = Color(0xFF00695C)    // Teal 800
 private val Accent = Color(0xFF4DB6AC)    // Teal 300
 private val LightBg = Color(0xFFF0FAF9)
 private val CardBg = Color.White
-
-// ============= HELPERS =============
-
-private fun formatVND(amount: Double): String {
-    return if (amount >= 1_000_000) {
-        "${"%.1f".format(amount / 1_000_000)}M VNĐ"
-    } else {
-        "${(amount / 1000).toInt()}K VNĐ"
-    }
-}
 
 
 // ============= TAB 2: ROOMS =============
@@ -100,10 +92,10 @@ fun StaffRoomsContent(viewModel: StaffRoomsViewModel) {
                     label = {
                         Text(
                             when (f) {
-                                "All" -> "Tất Cả (${rooms.size})"
-                                "AVAILABLE" -> "Trống (${rooms.count { it.status == "AVAILABLE" }})"
-                                "OCCUPIED" -> "Có Khách (${rooms.count { it.status == "OCCUPIED" }})"
-                                "MAINTENANCE" -> "Bảo Trì (${rooms.count { it.status == "MAINTENANCE" }})"
+                                "All" -> "All (${rooms.size})"
+                                "AVAILABLE" -> "Available (${rooms.count { it.status == "AVAILABLE" }})"
+                                "OCCUPIED" -> "Occupied (${rooms.count { it.status == "OCCUPIED" }})"
+                                "MAINTENANCE" -> "Maintenance (${rooms.count { it.status == "MAINTENANCE" }})"
                                 else -> f
                             },
                             fontSize = 12.sp
@@ -153,9 +145,9 @@ fun StaffRoomCard(room: StaffRoom, onUpdateStatus: (String) -> Unit) {
     var showMenu by remember { mutableStateOf(false) }
 
     val (statusColor, statusLabel) = when (room.status) {
-        "AVAILABLE" -> Pair(Color(0xFF4CAF50), "Trống")
-        "OCCUPIED" -> Pair(Color(0xFF2196F3), "Có Khách")
-        "MAINTENANCE" -> Pair(Color(0xFFFF9800), "Bảo Trì")
+        "AVAILABLE" -> Pair(Color(0xFF4CAF50), "Available")
+        "OCCUPIED" -> Pair(Color(0xFF2196F3), "Occupied")
+        "MAINTENANCE" -> Pair(Color(0xFFFF9800), "Maintenance")
         else -> Pair(Color.Gray, room.status)
     }
 
@@ -180,7 +172,7 @@ fun StaffRoomCard(room: StaffRoom, onUpdateStatus: (String) -> Unit) {
                         fontWeight = FontWeight.ExtraBold,
                         color = statusColor
                     )
-                    Text("T${room.floor}", fontSize = 10.sp, color = statusColor.copy(alpha = 0.7f))
+                    Text("F${room.floor}", fontSize = 10.sp, color = statusColor.copy(alpha = 0.7f))
                 }
             }
 
@@ -194,7 +186,7 @@ fun StaffRoomCard(room: StaffRoom, onUpdateStatus: (String) -> Unit) {
                     color = Color(0xFF1A1A1A)
                 )
                 Text(
-                    "${room.capacity} người · ${formatVND(room.basePrice)}/đêm",
+                    "${room.capacity} person · ${room.basePrice}/night",
                     fontSize = 12.sp, color = Color.Gray
                 )
                 if (room.status == "OCCUPIED" && room.currentGuest != null) {
@@ -211,7 +203,10 @@ fun StaffRoomCard(room: StaffRoom, onUpdateStatus: (String) -> Unit) {
                             room.currentGuest,
                             fontSize = 12.sp,
                             color = Color(0xFF2196F3),
-                            fontWeight = FontWeight.Medium
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
                         )
                         room.checkOutDate?.let {
                             Text(" · CO: $it", fontSize = 11.sp, color = Color.Gray)
@@ -243,19 +238,19 @@ fun StaffRoomCard(room: StaffRoom, onUpdateStatus: (String) -> Unit) {
                     DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                         if (room.status != "AVAILABLE") {
                             DropdownMenuItem(
-                                text = { Text("✅ Đánh dấu Trống") },
+                                text = { Text("✅ Available") },
                                 onClick = { onUpdateStatus("AVAILABLE"); showMenu = false }
                             )
                         }
                         if (room.status != "OCCUPIED") {
                             DropdownMenuItem(
-                                text = { Text("🛏️ Đánh dấu Có Khách") },
+                                text = { Text("🛏️ Occupied") },
                                 onClick = { onUpdateStatus("OCCUPIED"); showMenu = false }
                             )
                         }
                         if (room.status != "MAINTENANCE") {
                             DropdownMenuItem(
-                                text = { Text("🔧 Đánh dấu Bảo Trì") },
+                                text = { Text("🔧 Maintenance") },
                                 onClick = { onUpdateStatus("MAINTENANCE"); showMenu = false }
                             )
                         }

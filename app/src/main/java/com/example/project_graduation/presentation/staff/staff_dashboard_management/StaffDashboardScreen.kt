@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 //import com.example.project_graduation.presentation.staff.StaffBookingCard
 import com.example.project_graduation.presentation.staff.StaffViewModel
 import com.example.project_graduation.presentation.staff.staff_booking_management.StaffBookingCard
@@ -66,9 +67,9 @@ fun StaffDashboardContent(
 //    val bookings by viewModel.bookings.collectAsState()
 //    val staffInfo by viewModel.staffInfo.collectAsState()
 
-    val stats    by viewModel.stats.collectAsState()
-    val bookings by bookingsViewModel.bookings.collectAsState()
-    val staffInfo by viewModel.profile.collectAsState()
+    val stats    by viewModel.stats.collectAsStateWithLifecycle()
+    val bookings by bookingsViewModel.bookings.collectAsStateWithLifecycle()
+    val staffInfo by viewModel.profile.collectAsStateWithLifecycle()
 
     LazyColumn(
         Modifier.fillMaxSize(),

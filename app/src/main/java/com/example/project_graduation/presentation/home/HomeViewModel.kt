@@ -115,6 +115,9 @@ class HomeViewModel(
         Log.d("ContentValues", "Current SearchCriteria: ${_searchCriteria.value}")
     }
 
+    fun resetSearchCriteria() {
+        _searchCriteria.value = SearchCriteria()   // reset về default (today / tomorrow)
+    }
 
     fun clearError() {
         _error.value = null

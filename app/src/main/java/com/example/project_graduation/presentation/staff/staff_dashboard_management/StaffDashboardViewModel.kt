@@ -11,6 +11,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+
+
 
 // ─── UI Model cho tab Profile ────────────────────────────────────────────────
 data class StaffProfile(
@@ -78,6 +83,7 @@ class StaffDashboardViewModel(
                 phone     = userDto.phone ?: ""
             )
             loadDashboardStats(staffInfoDto.hotelId)
+            startPolling()
         }
     }
 
@@ -103,14 +109,17 @@ class StaffDashboardViewModel(
             )
             Log.d("StaffDashboardVM", "initFromPrefs OK: ${user.username} @ ${staffLocal.hotelName}")
             loadDashboardStats(staffLocal.hotelId)
+            startPolling()
         }
     }
 
     // Gọi API thật
     private fun loadDashboardStats(hotelId: Int) {
         viewModelScope.launch {
+            Log.d("POLLING", ">>> Fetching stats for hotelId=$hotelId")
             staffApi.getDashboardStats(hotelId)
                 .onSuccess { dto ->
+                    Log.d("POLLING", ">>> Success: checkIns=${dto.todayCheckIns}")
                     _stats.value = StaffDashboardStats(
                         todayCheckIns    = dto.todayCheckIns,
                         todayCheckOuts   = dto.todayCheckOuts,
@@ -122,6 +131,7 @@ class StaffDashboardViewModel(
                     )
                 }
                 .onFailure { e ->
+                    Log.e("POLLING", ">>> Failed: ${e.message}")
                     Log.e("StaffDashboardVM", "loadStats failed: ${e.message}")
                     // Giữ nguyên default 0 nếu API fail — không crash UI
                 }
@@ -212,6 +222,25 @@ class StaffDashboardViewModel(
 //            totalRevenue = revenue
 //        )
 //    }
+
+    private var pollingJob: Job? = null
+
+    fun startPolling(intervalMs: Long = 10_000L) {
+        pollingJob?.cancel()
+        pollingJob = viewModelScope.launch {
+            while (isActive) {
+                val hotelId = _profile.value.hotelId
+                if (hotelId > 0) {
+                    loadDashboardStats(hotelId)
+                }
+                delay(intervalMs)
+            }
+        }
+    }
+
+    fun stopPolling() {
+        pollingJob?.cancel()
+    }
 
     fun clearError() {
         _error.value = null

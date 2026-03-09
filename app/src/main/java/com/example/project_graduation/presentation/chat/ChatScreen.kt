@@ -65,6 +65,7 @@ fun ChatListScreen(
     onBack: () -> Unit = {}
 ) {
     Scaffold(
+        contentWindowInsets = WindowInsets(0),
         topBar = {
             TopAppBar(
                 title = {

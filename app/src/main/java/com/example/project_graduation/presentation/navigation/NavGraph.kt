@@ -363,17 +363,29 @@ fun NavGraph(
                 initialTab = 0,
                 onNavigateToHotelDetail = { hotelId ->
                     val criteria = homeViewModel.searchCriteria.value
+
+//                    thêm default date
+                    val today = java.time.LocalDate.now()
+                    val checkIn = criteria.checkIn.ifEmpty {
+                        today.toString()                        // "2026-03-07"
+                    }
+                    val checkOut = criteria.checkOut.ifEmpty {
+                        today.plusDays(1).toString()            // "2026-03-08"
+                    }
+                    val guests = if (criteria.guests <= 0) 2 else criteria.guests
+
                     navController.navigate(
                         Screen.HotelDetail.createRoute(
                             hotelId,
-                            criteria.checkIn,
-                            criteria.checkOut,
-                            criteria.guests
+                            checkIn,
+                            checkOut,
+                            guests
                         )
                     )
                 },
 
                 onLogout = {
+                    homeViewModel.resetSearchCriteria()
                     navController.navigate(Screen.Login.route) {
                         popUpTo(Screen.MainUser.route) { inclusive = true }
                     }
@@ -888,6 +900,7 @@ fun NavGraph(
 
                     staffBookingsViewModel.loadBookings(staffLocal.hotelId)
                     staffRoomsViewModel.loadRooms(staffLocal.hotelId)
+                    staffBookingsViewModel.startPolling(staffLocal.hotelId)
                     staffChatViewModel.init(
                         staffId   = user.userId,
                         staffName = user.username,

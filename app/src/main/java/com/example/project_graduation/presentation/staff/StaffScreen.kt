@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.project_graduation.presentation.staff.staff_chat_management.StaffChatScreen
 import com.example.project_graduation.presentation.staff.staff_dashboard_management.StaffDashboardContent
 import com.example.project_graduation.presentation.staff.staff_profile_management.StaffProfileContent
@@ -49,12 +50,30 @@ fun StaffScreen(
     initialTab: Int = 0,
     onLogout: () -> Unit = {}
 ) {
-    val profile by dashboardViewModel.profile.collectAsState()
+    val profile by dashboardViewModel.profile.collectAsStateWithLifecycle()
 //    val staffInfo by staffViewModel.staffInfo.collectAsState()
 //    val conversations by staffViewModel.conversations.collectAsState()
 //    val unreadCount = remember(conversations) { conversations.sumOf { it.unreadCount } }
     val chatUnread  by remember { derivedStateOf { chatViewModel.getTotalUnread() } }
     var selectedTab by remember { mutableStateOf(initialTab) }
+
+    // Thêm sau các biến state (selectedTab, chatUnread...)
+//    LaunchedEffect(Unit) {
+//        dashboardViewModel.startPolling(intervalMs = 3_000L)
+//    }
+//    // ✅ Restart polling khi hotelId sẵn sàng
+//    LaunchedEffect(profile.hotelId) {
+//        if (profile.hotelId > 0) {
+//            dashboardViewModel.startPolling(intervalMs = 10_000L)
+//        }
+//    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            dashboardViewModel.stopPolling()
+            bookingsViewModel.stopPolling()
+        }
+    }
 
     Scaffold(
         topBar = {

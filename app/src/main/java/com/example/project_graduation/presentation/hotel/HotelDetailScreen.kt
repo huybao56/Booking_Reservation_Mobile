@@ -459,37 +459,37 @@ fun HotelDetailScreen(
                             }
                         }
 
-                        // Amenities Section
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
-                            elevation = CardDefaults.cardElevation(4.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(20.dp)
-                            ) {
-                                Text(
-                                    text = "Amenities",
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.Black
-                                )
-
-                                Spacer(modifier = Modifier.height(16.dp))
-
-                                // Amenity items
-                                AmenityItem(Icons.Default.Wifi, "Free WiFi")
-                                AmenityItem(Icons.Default.LocalParking, "Parking")
-                                AmenityItem(Icons.Default.Pool, "Swimming Pool")
-                                AmenityItem(Icons.Default.Restaurant, "Restaurant")
-                                AmenityItem(Icons.Default.FitnessCenter, "Gym")
-                            }
-                        }
+//                        // Amenities Section
+//                        Card(
+//                            modifier = Modifier
+//                                .fillMaxWidth()
+//                                .padding(horizontal = 16.dp),
+//                            shape = RoundedCornerShape(16.dp),
+//                            colors = CardDefaults.cardColors(containerColor = Color.White),
+//                            elevation = CardDefaults.cardElevation(4.dp)
+//                        ) {
+//                            Column(
+//                                modifier = Modifier
+//                                    .fillMaxWidth()
+//                                    .padding(20.dp)
+//                            ) {
+//                                Text(
+//                                    text = "Amenities",
+//                                    fontSize = 18.sp,
+//                                    fontWeight = FontWeight.Bold,
+//                                    color = Color.Black
+//                                )
+//
+//                                Spacer(modifier = Modifier.height(16.dp))
+//
+//                                // Amenity items
+//                                AmenityItem(Icons.Default.Wifi, "Free WiFi")
+//                                AmenityItem(Icons.Default.LocalParking, "Parking")
+//                                AmenityItem(Icons.Default.Pool, "Swimming Pool")
+//                                AmenityItem(Icons.Default.Restaurant, "Restaurant")
+//                                AmenityItem(Icons.Default.FitnessCenter, "Gym")
+//                            }
+//                        }
 
                         Spacer(modifier = Modifier.height(16.dp))
 

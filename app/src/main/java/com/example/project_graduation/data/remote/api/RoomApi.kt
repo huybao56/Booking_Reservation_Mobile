@@ -29,7 +29,7 @@ class RoomApi {
     ): Result<List<RoomAvailabilityDto>> = withContext(Dispatchers.IO) {
         try {
             val request = Request.Builder()
-                .url("${ApiConfig.BASE_URL}/hotels/$hotelId/rooms")
+                .url("${ApiConfig.BASE_URL}/hotels/$hotelId/rooms/availability?checkIn=$checkIn&checkOut=$checkOut")
                 .get()
                 .build()
 
@@ -39,84 +39,119 @@ class RoomApi {
             Log.d("RoomApi", "Status Code: ${response.code} Get rooms response: $responseBody")
 
             if (response.isSuccessful && responseBody != null) {
-                val jsonResponse = JSONObject(responseBody)
-
-//                if (jsonResponse.getBoolean("success")) {
-                val dataObject = jsonResponse.getJSONObject("data")
-                val roomsArray = dataObject.getJSONArray("rooms")
-
-                // Group rooms by roomType and calculate availability
-//                    val roomsByType = mutableMapOf<String, MutableList<RoomDto>>()
+                val roomsArray = org.json.JSONArray(responseBody)
                 val roomAvailabilities = mutableListOf<RoomAvailabilityDto>()
 
                 for (i in 0 until roomsArray.length()) {
                     val roomObj = roomsArray.getJSONObject(i)
 
-                    val roomDto = parseRoomObject(roomObj)
-
-//                    val roomDto = RoomDto(
-//                        roomId = roomObj.getInt("roomId"),
-//                        hotelId = roomObj.getInt("hotelId"),
-//                        roomNumber = roomObj.optString("roomNumber", "N/A"),
-//                        roomType = roomObj.optString("roomType", "Standard Room"),
-//                        floor = roomObj.optInt("floor", 1),
-//                        status = roomObj.optString("status", "AVAILABLE"),
-//                        basePrice = roomObj.optDouble("basePrice", 100.0),
-//                        capacity = roomObj.optInt("capacity", 2),
-//                        description = getDescriptionForRoomType(
-//                            roomObj.optString(
-//                                "roomType",
-//                                "Standard Room"
-//                            )
-//                        ),
-//                        amenities = getAmenitiesForRoomType(
-//                            roomObj.optString(
-//                                "roomType",
-//                                "Standard Room"
-//                            )
-//                        ),
-////                        imageUrl = null
-//                    )
-
-                    Log.d(
-                        "RoomApi",
-                        "Room ${roomDto.roomNumber} has ${roomDto.amenities.size} amenities: ${roomDto.amenities}"
+                    // Backend trả về AvailableRoomResponse: roomId, roomNumber, roomType, floor, basePrice, capacity, status
+                    val roomDto = RoomDto(
+                        roomId     = roomObj.getInt("roomId"),
+                        hotelId    = hotelId,
+                        roomNumber = roomObj.optString("roomNumber", ""),
+                        roomType   = roomObj.optString("roomType", "Standard Room"),
+                        floor      = roomObj.optInt("floor", 1),
+                        status     = roomObj.optString("status", "AVAILABLE"),
+                        basePrice  = roomObj.optDouble("basePrice", 100.0),
+                        capacity   = roomObj.optInt("capacity", 2),
+                        description = null,
+                        amenities  = getAmenitiesForRoomType(roomObj.optString("roomType", "Standard Room")),
+                        images     = emptyList(),
+                        primaryImage = null
                     )
 
-                    // Chỉ thêm phòng AVAILABLE
-                    if (roomDto.status == "AVAILABLE") {
-                        roomAvailabilities.add(
-                            RoomAvailabilityDto(
-                                room = roomDto,
-                                availableUnits = 1, // Mỗi phòng = 1 unit
-                                pricePerNight = roomDto.basePrice
-                            )
+                    roomAvailabilities.add(
+                        RoomAvailabilityDto(
+                            room           = roomDto,
+                            availableUnits = 1,
+                            pricePerNight  = roomDto.basePrice
                         )
-                    }
-
-//                        val roomType = roomDto.roomType ?: "Standard Room"
-//                        if (!roomsByType.containsKey(roomType)) {
-//                            roomsByType[roomType] = mutableListOf()
-//                        }
-//                        roomsByType[roomType]?.add(roomDto)
+                    )
                 }
 
-                // Convert to RoomAvailabilityDto - one entry per room type
-//                    val roomAvailabilities = roomsByType.map { (_, roomsList) ->
-//                        val firstRoom = roomsList.first()
-//                        val availableCount = roomsList.count { it.status == "AVAILABLE" }
+                Log.d("RoomApi", "Found ${roomAvailabilities.size} rooms available for $checkIn → $checkOut")
+                Result.success(roomAvailabilities)
+
+
+//                val jsonResponse = JSONObject(responseBody)
 //
-//                        RoomAvailabilityDto(
-//                            room = firstRoom, // Use first room as representative
-//                            availableUnits = availableCount,
-//                            pricePerNight = firstRoom.basePrice ?: 100.0
+////                if (jsonResponse.getBoolean("success")) {
+//                val dataObject = jsonResponse.getJSONObject("data")
+//                val roomsArray = dataObject.getJSONArray("rooms")
+//
+//                // Group rooms by roomType and calculate availability
+////                    val roomsByType = mutableMapOf<String, MutableList<RoomDto>>()
+//                val roomAvailabilities = mutableListOf<RoomAvailabilityDto>()
+//
+//                for (i in 0 until roomsArray.length()) {
+//                    val roomObj = roomsArray.getJSONObject(i)
+//
+//                    val roomDto = parseRoomObject(roomObj)
+//
+////                    val roomDto = RoomDto(
+////                        roomId = roomObj.getInt("roomId"),
+////                        hotelId = roomObj.getInt("hotelId"),
+////                        roomNumber = roomObj.optString("roomNumber", "N/A"),
+////                        roomType = roomObj.optString("roomType", "Standard Room"),
+////                        floor = roomObj.optInt("floor", 1),
+////                        status = roomObj.optString("status", "AVAILABLE"),
+////                        basePrice = roomObj.optDouble("basePrice", 100.0),
+////                        capacity = roomObj.optInt("capacity", 2),
+////                        description = getDescriptionForRoomType(
+////                            roomObj.optString(
+////                                "roomType",
+////                                "Standard Room"
+////                            )
+////                        ),
+////                        amenities = getAmenitiesForRoomType(
+////                            roomObj.optString(
+////                                "roomType",
+////                                "Standard Room"
+////                            )
+////                        ),
+//////                        imageUrl = null
+////                    )
+//
+//                    Log.d(
+//                        "RoomApi",
+//                        "Room ${roomDto.roomNumber} has ${roomDto.amenities.size} amenities: ${roomDto.amenities}"
+//                    )
+//
+//                    // Chỉ thêm phòng AVAILABLE
+//                    if (roomDto.status == "AVAILABLE") {
+//                        roomAvailabilities.add(
+//                            RoomAvailabilityDto(
+//                                room = roomDto,
+//                                availableUnits = 1, // Mỗi phòng = 1 unit
+//                                pricePerNight = roomDto.basePrice
+//                            )
 //                        )
 //                    }
-                Log.d("RoomApi", "Found ${roomAvailabilities.size} available rooms")
-                Result.success(roomAvailabilities)
-//                } else {
-//                    Result.failure(Exception(jsonResponse.getString("message")))
+//
+////                        val roomType = roomDto.roomType ?: "Standard Room"
+////                        if (!roomsByType.containsKey(roomType)) {
+////                            roomsByType[roomType] = mutableListOf()
+////                        }
+////                        roomsByType[roomType]?.add(roomDto)
 //                }
+//
+//                // Convert to RoomAvailabilityDto - one entry per room type
+////                    val roomAvailabilities = roomsByType.map { (_, roomsList) ->
+////                        val firstRoom = roomsList.first()
+////                        val availableCount = roomsList.count { it.status == "AVAILABLE" }
+////
+////                        RoomAvailabilityDto(
+////                            room = firstRoom, // Use first room as representative
+////                            availableUnits = availableCount,
+////                            pricePerNight = firstRoom.basePrice ?: 100.0
+////                        )
+////                    }
+//                Log.d("RoomApi", "Found ${roomAvailabilities.size} available rooms available for $checkIn → $checkOut")
+//                Result.success(roomAvailabilities)
+////                } else {
+////                    Result.failure(Exception(jsonResponse.getString("message")))
+////                }
             } else {
                 Result.failure(Exception("HTTP ${response.code}"))
             }

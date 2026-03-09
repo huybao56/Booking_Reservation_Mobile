@@ -4,9 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.project_graduation.data.remote.api.StaffApi
 import com.example.project_graduation.data.remote.dto.StaffBookingDto
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 //data class StaffBooking(
@@ -110,6 +113,24 @@ class StaffBookingsViewModel(
 //            _operationSuccess.value = "Booking $bookingId → $newStatus"
 //        }
 //    }
+
+
+
+    private var pollingJob: Job? = null  // ✅ thêm vào trong class
+
+    fun startPolling(hotelId: Int, intervalMs: Long = 10_000L) {
+        pollingJob?.cancel()
+        pollingJob = viewModelScope.launch {
+            while (isActive) {
+                loadBookings(hotelId)
+                delay(intervalMs)
+            }
+        }
+    }
+
+    fun stopPolling() {
+        pollingJob?.cancel()
+    }
 
     fun clearSuccess() {
         _operationSuccess.value = null

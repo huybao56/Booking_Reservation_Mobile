@@ -32,7 +32,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="eRest - Booking Hotels"
+            android:label="Hotels Link Bookings"
             android:theme="@style/Theme.Project_Graduation" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

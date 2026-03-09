@@ -42,6 +42,8 @@ android {
 
 dependencies {
 
+    val lifecycle_version = "2.10.0"
+
 //    implementation(project(":shared"))
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 
@@ -50,8 +52,12 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.7.6")
     implementation("androidx.compose.material:material-icons-extended:1.5.4")
 
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
+//    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+//    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
+//    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
+
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:${lifecycle_version}")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:${lifecycle_version}")
 
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 

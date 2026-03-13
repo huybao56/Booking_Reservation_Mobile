@@ -29,23 +29,23 @@ import com.example.project_graduation.data.remote.api.BookingApi
 import com.example.project_graduation.domain.model.Room
 import kotlinx.coroutines.launch
 
-data class PaymentUiState(
-    val room: Room? = null,
-    val quantity: Int = 1,
-    val pricePerNight: Double = 0.0,
-    val totalNights: Int = 1,
-    val checkIn: String = "",
-    val checkOut: String = "",
-    val hotelName: String = "",
-    val isProcessing: Boolean = false,
-    val paymentSuccess: Boolean = false,
-    val error: String? = null
-)
+//data class PaymentUiState(
+//    val room: Room? = null,
+//    val quantity: Int = 1,
+//    val pricePerNight: Double = 0.0,
+//    val totalNights: Int = 1,
+//    val checkIn: String = "",
+//    val checkOut: String = "",
+//    val hotelName: String = "",
+//    val isProcessing: Boolean = false,
+//    val paymentSuccess: Boolean = false,
+//    val error: String? = null
+//)
 
 enum class PaymentMethod {
-    CREDIT_CARD,
-    DEBIT_CARD,
-    PAYPAL,
+//    CREDIT_CARD,
+//    DEBIT_CARD,
+//    PAYPAL,
     CASH
 }
 
@@ -60,16 +60,21 @@ fun PaymentScreen(
     checkOut: String,
     hotelName: String,
     preferencesManager: PreferencesManager,
+    viewModel: PaymentViewModel,
     onBack: () -> Unit,
     onPaymentSuccess: (bookingId: String) -> Unit,
     modifier: Modifier = Modifier
 ) {
 
     val scope = rememberCoroutineScope()
+    val uiState    by viewModel.uiState.collectAsState()
+    val remainingMs by viewModel.remainingMs.collectAsState()
+
+
     val bookingApi = remember { BookingApi() }
 
 
-    var selectedPaymentMethod by remember { mutableStateOf(PaymentMethod.CREDIT_CARD) }
+    var selectedPaymentMethod by remember { mutableStateOf(PaymentMethod.CASH) }
     var cardNumber by remember { mutableStateOf("") }
     var cardHolderName by remember { mutableStateOf("") }
     var expiryDate by remember { mutableStateOf("") }
@@ -84,6 +89,21 @@ fun PaymentScreen(
 //    val tax = subtotal * 0.1 // 10% tax
 //    val totalPrice = subtotal + tax
     val totalPrice = subtotal
+
+    // Xử lý kết quả từ ViewModel
+    LaunchedEffect(uiState) {
+        when (val s = uiState) {
+            is PaymentUiState.Success -> {
+                successBookingId = s.bookingId
+                showSuccessDialog = true
+            }
+            is PaymentUiState.Expired -> {
+                // Hết giờ → back về RoomDetail
+                onBack()
+            }
+            else -> {}
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -108,6 +128,48 @@ fun PaymentScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Countdown Banner
+            item {
+                val minutes  = (remainingMs / 60000).toInt()
+                val seconds  = ((remainingMs % 60000) / 1000).toInt()
+                val isUrgent = remainingMs in 1..59999
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isUrgent) Color(0xFFFFEBEE) else Color(0xFFE3F2FD)
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Timer,
+                            contentDescription = null,
+                            tint = if (isUrgent) Color(0xFFF44336) else Color(0xFF2196F3),
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "Room held for you",
+                                fontSize = 12.sp,
+                                color = Color.Gray
+                            )
+                            Text(
+                                "%02d:%02d remaining".format(minutes, seconds),
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isUrgent) Color(0xFFF44336) else Color(0xFF2196F3)
+                            )
+                        }
+                    }
+                }
+            }
             // Booking Summary Card
             item {
                 BookingSummaryCard(
@@ -138,85 +200,85 @@ fun PaymentScreen(
             }
 
             // Payment Details Form
-            if (selectedPaymentMethod == PaymentMethod.CREDIT_CARD ||
-                selectedPaymentMethod == PaymentMethod.DEBIT_CARD
-            ) {
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(4.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(20.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            Text(
-                                text = "Card Details",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.Black
-                            )
-
-                            // Card Number
-                            OutlinedTextField(
-                                value = cardNumber,
-                                onValueChange = { if (it.length <= 16) cardNumber = it },
-                                label = { Text("Card Number") },
-                                placeholder = { Text("1234 5678 9012 3456") },
-                                leadingIcon = {
-                                    Icon(Icons.Default.CreditCard, contentDescription = null)
-                                },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true
-                            )
-
-                            // Card Holder Name
-                            OutlinedTextField(
-                                value = cardHolderName,
-                                onValueChange = { cardHolderName = it },
-                                label = { Text("Card Holder Name") },
-                                placeholder = { Text("John Doe") },
-                                leadingIcon = {
-                                    Icon(Icons.Default.Person, contentDescription = null)
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true
-                            )
-
-                            // Expiry Date and CVV
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                OutlinedTextField(
-                                    value = expiryDate,
-                                    onValueChange = { if (it.length <= 5) expiryDate = it },
-                                    label = { Text("Expiry") },
-                                    placeholder = { Text("MM/YY") },
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                    modifier = Modifier.weight(1f),
-                                    singleLine = true
-                                )
-
-                                OutlinedTextField(
-                                    value = cvv,
-                                    onValueChange = { if (it.length <= 3) cvv = it },
-                                    label = { Text("CVV") },
-                                    placeholder = { Text("123") },
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                    modifier = Modifier.weight(1f),
-                                    singleLine = true
-                                )
-                            }
-                        }
-                    }
-                }
-            }
+//            if (selectedPaymentMethod == PaymentMethod.CREDIT_CARD ||
+//                selectedPaymentMethod == PaymentMethod.DEBIT_CARD
+//            ) {
+//                item {
+//                    Card(
+//                        modifier = Modifier.fillMaxWidth(),
+//                        shape = RoundedCornerShape(16.dp),
+//                        colors = CardDefaults.cardColors(containerColor = Color.White),
+//                        elevation = CardDefaults.cardElevation(4.dp)
+//                    ) {
+//                        Column(
+//                            modifier = Modifier
+//                                .fillMaxWidth()
+//                                .padding(20.dp),
+//                            verticalArrangement = Arrangement.spacedBy(16.dp)
+//                        ) {
+//                            Text(
+//                                text = "Card Details",
+//                                fontSize = 16.sp,
+//                                fontWeight = FontWeight.Bold,
+//                                color = Color.Black
+//                            )
+//
+//                            // Card Number
+//                            OutlinedTextField(
+//                                value = cardNumber,
+//                                onValueChange = { if (it.length <= 16) cardNumber = it },
+//                                label = { Text("Card Number") },
+//                                placeholder = { Text("1234 5678 9012 3456") },
+//                                leadingIcon = {
+//                                    Icon(Icons.Default.CreditCard, contentDescription = null)
+//                                },
+//                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+//                                modifier = Modifier.fillMaxWidth(),
+//                                singleLine = true
+//                            )
+//
+//                            // Card Holder Name
+//                            OutlinedTextField(
+//                                value = cardHolderName,
+//                                onValueChange = { cardHolderName = it },
+//                                label = { Text("Card Holder Name") },
+//                                placeholder = { Text("John Doe") },
+//                                leadingIcon = {
+//                                    Icon(Icons.Default.Person, contentDescription = null)
+//                                },
+//                                modifier = Modifier.fillMaxWidth(),
+//                                singleLine = true
+//                            )
+//
+//                            // Expiry Date and CVV
+//                            Row(
+//                                modifier = Modifier.fillMaxWidth(),
+//                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+//                            ) {
+//                                OutlinedTextField(
+//                                    value = expiryDate,
+//                                    onValueChange = { if (it.length <= 5) expiryDate = it },
+//                                    label = { Text("Expiry") },
+//                                    placeholder = { Text("MM/YY") },
+//                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+//                                    modifier = Modifier.weight(1f),
+//                                    singleLine = true
+//                                )
+//
+//                                OutlinedTextField(
+//                                    value = cvv,
+//                                    onValueChange = { if (it.length <= 3) cvv = it },
+//                                    label = { Text("CVV") },
+//                                    placeholder = { Text("123") },
+//                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+//                                    modifier = Modifier.weight(1f),
+//                                    singleLine = true
+//                                )
+//                            }
+//                        }
+//                    }
+//                }
+//            }
 
             // Price Breakdown
             item {
@@ -261,161 +323,171 @@ fun PaymentScreen(
             item {
                 Button(
                     onClick = {
-//                        isProcessing = true
-//                        // Simulate payment processing
-//                        showSuccessDialog = true
-                        scope.launch {
-                            isProcessing = true
-                            errorMessage = null
-
-                            try {
-                                // 1. Get user ID
-                                val user = preferencesManager.getUser()
-                                if (user == null) {
-                                    errorMessage = "Please login to continue"
-                                    isProcessing = false
-                                    return@launch
-                                }
-
-                                val userId = user.userId
-                                Log.d("PaymentScreen", "Creating booking for userId: $userId")
-
-                                // 2. Create bookings (loop for quantity)
-                                val bookingIds = mutableListOf<Int>()
-                                var sharedBookingGroupId: String? = null
-
-                                for (i in 1..quantity) {
-                                    Log.d("PaymentScreen", "Creating booking $i/$quantity...")
-
-                                    val bookingResult = bookingApi.createBooking(
-                                        userId = userId,
-                                        roomId = room.roomId,
-                                        checkIn = checkIn,
-                                        checkOut = checkOut,
-                                        totalPrice = pricePerNight * totalNights,
-                                        bookingGroupId = sharedBookingGroupId  // Null for first, then reuse
-                                    )
-
-                                    if (bookingResult.isSuccess) {
-                                        val result = bookingResult.getOrNull()!!  // ✅ Lấy CreateBookingResult
-
-                                        bookingIds.add(result.bookingId)  // ✅ Access bookingId property
-
-                                        // Get bookingGroupId from first booking
-                                        if (sharedBookingGroupId == null) {
-                                            sharedBookingGroupId = result.bookingGroupId  // ✅ Access bookingGroupId property
-                                            Log.d("PaymentScreen", "Using booking group ID: $sharedBookingGroupId")
-                                        }
-
-                                        Log.d("PaymentScreen", "Booking $i created: ID=${result.bookingId}, Group=${result.bookingGroupId}")
-                                    } else {
-                                        val error = bookingResult.exceptionOrNull()?.message ?: "Unknown error"
-                                        throw Exception("Failed to create booking $i: $error")
-                                    }
-                                }
-
-                                // 3. Create payment with shared bookingGroupId
-                                if (sharedBookingGroupId != null) {
-                                    Log.d("PaymentScreen", "Creating payment for group: $sharedBookingGroupId")
-                                    Log.d("PaymentScreen", "Total amount: $$totalPrice")
-
-                                    val paymentResult = bookingApi.createPayment(
-                                        bookingGroupId = sharedBookingGroupId,
-                                        provider = selectedPaymentMethod.name,
-                                        amount = totalPrice,
-                                        transactionId = "TXN${System.currentTimeMillis()}"
-                                    )
-
-                                    if (paymentResult.isSuccess) {
-                                        val paymentId = paymentResult.getOrNull()!!
-                                        successBookingId = bookingIds.first().toString()
-                                        showSuccessDialog = true
-                                        Log.d("PaymentScreen", "✅ Payment successful! PaymentID=$paymentId")
-                                        Log.d("PaymentScreen", "✅ BookingIDs: $bookingIds")
-                                    } else {
-                                        val error = paymentResult.exceptionOrNull()?.message ?: "Payment failed"
-                                        throw Exception(error)
-                                    }
-                                } else {
-                                    throw Exception("No booking group ID available")
-                                }
-
-
-
-
-
+////                        isProcessing = true
+////                        // Simulate payment processing
+////                        showSuccessDialog = true
+//                        scope.launch {
+//                            isProcessing = true
+//                            errorMessage = null
+//
+//                            try {
+//                                // 1. Get user ID
+//                                val user = preferencesManager.getUser()
+//                                if (user == null) {
+//                                    errorMessage = "Please login to continue"
+//                                    isProcessing = false
+//                                    return@launch
+//                                }
+//
+//                                val userId = user.userId
+//                                Log.d("PaymentScreen", "Creating booking for userId: $userId")
+//
 //                                // 2. Create bookings (loop for quantity)
 //                                val bookingIds = mutableListOf<Int>()
-////                                var firstBookingGroupId: String? = null
 //                                var sharedBookingGroupId: String? = null
 //
 //                                for (i in 1..quantity) {
+//                                    Log.d("PaymentScreen", "Creating booking $i/$quantity...")
+//
 //                                    val bookingResult = bookingApi.createBooking(
 //                                        userId = userId,
 //                                        roomId = room.roomId,
 //                                        checkIn = checkIn,
 //                                        checkOut = checkOut,
 //                                        totalPrice = pricePerNight * totalNights,
-//                                        bookingGroupId = sharedBookingGroupId
+//                                        bookingGroupId = sharedBookingGroupId  // Null for first, then reuse
 //                                    )
 //
 //                                    if (bookingResult.isSuccess) {
-//                                        val createdBookingId = bookingResult.getOrNull()!!
+//                                        val result = bookingResult.getOrNull()!!  // ✅ Lấy CreateBookingResult
 //
-//                                        bookingIds.add(createdBookingId)
+//                                        bookingIds.add(result.bookingId)  // ✅ Access bookingId property
 //
-//                                        // TODO: Get booking_group_id from backend response
-//                                        // For now, use temporary UUID
-//                                        if (firstBookingGroupId == null) {
-//                                            firstBookingGroupId =
-//                                                java.util.UUID.randomUUID().toString()
+//                                        // Get bookingGroupId from first booking
+//                                        if (sharedBookingGroupId == null) {
+//                                            sharedBookingGroupId = result.bookingGroupId  // ✅ Access bookingGroupId property
+//                                            Log.d("PaymentScreen", "Using booking group ID: $sharedBookingGroupId")
 //                                        }
 //
-////                                        if (firstBookingGroupId == null) {
-////                                            // Get booking_group_id from first booking
-////                                            // You'll need to fetch this from backend
-////                                            firstBookingGroupId = "temp-group-id" // TODO: Get from API
-////                                        }
-//////                                        bookingId = createdBookingId.toString()
-//                                        Log.d(
-//                                            "PaymentScreen",
-//                                            "Booking $i created: $createdBookingId"
-//                                        )
+//                                        Log.d("PaymentScreen", "Booking $i created: ID=${result.bookingId}, Group=${result.bookingGroupId}")
 //                                    } else {
-//                                        throw Exception("Failed to create booking")
+//                                        val error = bookingResult.exceptionOrNull()?.message ?: "Unknown error"
+//                                        throw Exception("Failed to create booking $i: $error")
 //                                    }
 //                                }
 //
-//                                // 3. Create payment
-//                                if (firstBookingGroupId != null) {
+//                                // 3. Create payment with shared bookingGroupId
+//                                if (sharedBookingGroupId != null) {
+//                                    Log.d("PaymentScreen", "Creating payment for group: $sharedBookingGroupId")
+//                                    Log.d("PaymentScreen", "Total amount: $$totalPrice")
+//
 //                                    val paymentResult = bookingApi.createPayment(
-//                                        bookingGroupId = firstBookingGroupId,
+//                                        bookingGroupId = sharedBookingGroupId,
 //                                        provider = selectedPaymentMethod.name,
 //                                        amount = totalPrice,
 //                                        transactionId = "TXN${System.currentTimeMillis()}"
 //                                    )
 //
-////                                    if (paymentResult.isSuccess) {
-////                                        showSuccessDialog = true
-////                                    }
 //                                    if (paymentResult.isSuccess) {
+//                                        val paymentId = paymentResult.getOrNull()!!
 //                                        successBookingId = bookingIds.first().toString()
 //                                        showSuccessDialog = true
-//                                        Log.d("PaymentScreen", "Payment successful!")
+//                                        Log.d("PaymentScreen", "✅ Payment successful! PaymentID=$paymentId")
+//                                        Log.d("PaymentScreen", "✅ BookingIDs: $bookingIds")
 //                                    } else {
-//                                        throw Exception(
-//                                            paymentResult.exceptionOrNull()?.message
-//                                                ?: "Payment failed"
-//                                        )
+//                                        val error = paymentResult.exceptionOrNull()?.message ?: "Payment failed"
+//                                        throw Exception(error)
 //                                    }
+//                                } else {
+//                                    throw Exception("No booking group ID available")
 //                                }
-                            } catch (e: Exception) {
-                                Log.e("PaymentScreen", "Error: ${e.message}")
-                                errorMessage = e.message ?: "An error occurred. Please try again."
-                            } finally {
-                                isProcessing = false
-                            }
-                        }
+//
+//
+//
+//
+//
+////                                // 2. Create bookings (loop for quantity)
+////                                val bookingIds = mutableListOf<Int>()
+//////                                var firstBookingGroupId: String? = null
+////                                var sharedBookingGroupId: String? = null
+////
+////                                for (i in 1..quantity) {
+////                                    val bookingResult = bookingApi.createBooking(
+////                                        userId = userId,
+////                                        roomId = room.roomId,
+////                                        checkIn = checkIn,
+////                                        checkOut = checkOut,
+////                                        totalPrice = pricePerNight * totalNights,
+////                                        bookingGroupId = sharedBookingGroupId
+////                                    )
+////
+////                                    if (bookingResult.isSuccess) {
+////                                        val createdBookingId = bookingResult.getOrNull()!!
+////
+////                                        bookingIds.add(createdBookingId)
+////
+////                                        // TODO: Get booking_group_id from backend response
+////                                        // For now, use temporary UUID
+////                                        if (firstBookingGroupId == null) {
+////                                            firstBookingGroupId =
+////                                                java.util.UUID.randomUUID().toString()
+////                                        }
+////
+//////                                        if (firstBookingGroupId == null) {
+//////                                            // Get booking_group_id from first booking
+//////                                            // You'll need to fetch this from backend
+//////                                            firstBookingGroupId = "temp-group-id" // TODO: Get from API
+//////                                        }
+////////                                        bookingId = createdBookingId.toString()
+////                                        Log.d(
+////                                            "PaymentScreen",
+////                                            "Booking $i created: $createdBookingId"
+////                                        )
+////                                    } else {
+////                                        throw Exception("Failed to create booking")
+////                                    }
+////                                }
+////
+////                                // 3. Create payment
+////                                if (firstBookingGroupId != null) {
+////                                    val paymentResult = bookingApi.createPayment(
+////                                        bookingGroupId = firstBookingGroupId,
+////                                        provider = selectedPaymentMethod.name,
+////                                        amount = totalPrice,
+////                                        transactionId = "TXN${System.currentTimeMillis()}"
+////                                    )
+////
+//////                                    if (paymentResult.isSuccess) {
+//////                                        showSuccessDialog = true
+//////                                    }
+////                                    if (paymentResult.isSuccess) {
+////                                        successBookingId = bookingIds.first().toString()
+////                                        showSuccessDialog = true
+////                                        Log.d("PaymentScreen", "Payment successful!")
+////                                    } else {
+////                                        throw Exception(
+////                                            paymentResult.exceptionOrNull()?.message
+////                                                ?: "Payment failed"
+////                                        )
+////                                    }
+////                                }
+//                            } catch (e: Exception) {
+//                                Log.e("PaymentScreen", "Error: ${e.message}")
+//                                errorMessage = e.message ?: "An error occurred. Please try again."
+//                            } finally {
+//                                isProcessing = false
+//                            }
+//                        }
+                        viewModel.confirmAndPay(
+                            roomId        = room.roomId,
+                            checkIn       = checkIn,
+                            checkOut      = checkOut,
+                            pricePerNight = pricePerNight,
+                            totalNights   = totalNights,
+                            quantity      = quantity,
+                            paymentMethod = selectedPaymentMethod.name
+                        )
+
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -424,7 +496,8 @@ fun PaymentScreen(
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF2196F3)
                     ),
-                    enabled = !isProcessing && isPaymentFormValid(
+//                    enabled = !isProcessing && isPaymentFormValid(
+                    enabled = uiState is PaymentUiState.ReadyToPay && isPaymentFormValid(
                         selectedPaymentMethod,
                         cardNumber,
                         cardHolderName,
@@ -432,7 +505,8 @@ fun PaymentScreen(
                         cvv
                     )
                 ) {
-                    if (isProcessing) {
+//                    if (isProcessing) {
+                    if (uiState is PaymentUiState.Processing) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(24.dp),
                             color = Color.White
@@ -659,26 +733,26 @@ fun PaymentMethodSelector(
     Column(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        PaymentMethodItem(
-            icon = Icons.Default.CreditCard,
-            title = "Credit Card",
-            isSelected = selectedMethod == PaymentMethod.CREDIT_CARD,
-            onClick = { onMethodSelected(PaymentMethod.CREDIT_CARD) }
-        )
-
-        PaymentMethodItem(
-            icon = Icons.Default.AccountBalance,
-            title = "Debit Card",
-            isSelected = selectedMethod == PaymentMethod.DEBIT_CARD,
-            onClick = { onMethodSelected(PaymentMethod.DEBIT_CARD) }
-        )
-
-        PaymentMethodItem(
-            icon = Icons.Default.AccountBalanceWallet,
-            title = "PayPal",
-            isSelected = selectedMethod == PaymentMethod.PAYPAL,
-            onClick = { onMethodSelected(PaymentMethod.PAYPAL) }
-        )
+//        PaymentMethodItem(
+//            icon = Icons.Default.CreditCard,
+//            title = "Credit Card",
+//            isSelected = selectedMethod == PaymentMethod.CREDIT_CARD,
+//            onClick = { onMethodSelected(PaymentMethod.CREDIT_CARD) }
+//        )
+//
+//        PaymentMethodItem(
+//            icon = Icons.Default.AccountBalance,
+//            title = "Debit Card",
+//            isSelected = selectedMethod == PaymentMethod.DEBIT_CARD,
+//            onClick = { onMethodSelected(PaymentMethod.DEBIT_CARD) }
+//        )
+//
+//        PaymentMethodItem(
+//            icon = Icons.Default.AccountBalanceWallet,
+//            title = "PayPal",
+//            isSelected = selectedMethod == PaymentMethod.PAYPAL,
+//            onClick = { onMethodSelected(PaymentMethod.PAYPAL) }
+//        )
 
         PaymentMethodItem(
             icon = Icons.Default.Money,
@@ -944,14 +1018,15 @@ fun isPaymentFormValid(
     cvv: String
 ): Boolean {
     return when (method) {
-        PaymentMethod.CREDIT_CARD, PaymentMethod.DEBIT_CARD -> {
-            cardNumber.length == 16 &&
-                    cardHolderName.isNotBlank() &&
-                    expiryDate.length >= 4 &&
-                    cvv.length == 3
-        }
+//        PaymentMethod.CREDIT_CARD, PaymentMethod.DEBIT_CARD -> {
+//            cardNumber.length == 16 &&
+//                    cardHolderName.isNotBlank() &&
+//                    expiryDate.length >= 4 &&
+//                    cvv.length == 3
+//        }
 
-        PaymentMethod.PAYPAL, PaymentMethod.CASH -> true
+//        PaymentMethod.PAYPAL,
+        PaymentMethod.CASH -> true
     }
 }
 

@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.project_graduation.data.remote.ApiConfig
 import com.example.project_graduation.domain.model.Room
+import com.example.project_graduation.presentation.room_detail.BookNowState
 import com.example.project_graduation.presentation.room_detail.RoomDetailViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,11 +36,44 @@ fun RoomDetailScreen(
     totalNights: Int,
     checkIn: String,
     checkOut: String,
+    userId: Int,
     viewModel: RoomDetailViewModel,
     onBack: () -> Unit,
     onBookNow: (Room, Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val bookNowState by viewModel.bookNowState.collectAsState()
+
+
+    // Dialog báo phòng bị người khác giữ
+    if (bookNowState is BookNowState.RoomLocked) {
+        AlertDialog(
+            onDismissRequest = { viewModel.resetBookNowState() },
+            title = { Text("Room Unavailable") },
+            text = { Text("This room is currently being held by another user. Please try again in a few minutes.") },
+            confirmButton = {
+                TextButton(onClick = { viewModel.resetBookNowState() }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+
+    // Dialog báo lỗi khác
+    if (bookNowState is BookNowState.Error) {
+        val errorMsg = (bookNowState as BookNowState.Error).message
+        AlertDialog(
+            onDismissRequest = { viewModel.resetBookNowState() },
+            title = { Text("Error") },
+            text = { Text(errorMsg) },
+            confirmButton = {
+                TextButton(onClick = { viewModel.resetBookNowState() }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+
     val state by viewModel.state.collectAsState()
     LaunchedEffect(room.roomId) {
         viewModel.loadRoomDetail(room.roomId)
@@ -65,12 +99,12 @@ fun RoomDetailScreen(
 //                        modifier = Modifier.fillMaxWidth(),
 //                        verticalArrangement = Arrangement.Center
 //                    ){
-                        Text("Room ${room.roomNumber}", fontSize = 18.sp)
-                        Text(
-                            room.roomType,
-                            fontSize = 13.sp,
-                            color = Color.White.copy(alpha = 0.8f)
-                        )
+                    Text("Room ${room.roomNumber}", fontSize = 18.sp)
+                    Text(
+                        room.roomType,
+                        fontSize = 13.sp,
+                        color = Color.White.copy(alpha = 0.8f)
+                    )
 //                    }
 //                    Text("Room Details")
                 },
@@ -208,7 +242,9 @@ fun RoomDetailScreen(
                                     Icon(
                                         Icons.Default.ChevronLeft,
                                         contentDescription = "Previous",
-                                        modifier = Modifier.padding(8.dp).size(24.dp),
+                                        modifier = Modifier
+                                            .padding(8.dp)
+                                            .size(24.dp),
                                         tint = Color.Black
                                     )
                                 }
@@ -216,8 +252,9 @@ fun RoomDetailScreen(
 
                             IconButton(
                                 onClick = {
-                                    currentImageIndex = if (currentImageIndex < roomWithImages.images.size - 1)
-                                        currentImageIndex + 1 else 0
+                                    currentImageIndex =
+                                        if (currentImageIndex < roomWithImages.images.size - 1)
+                                            currentImageIndex + 1 else 0
                                 },
                                 modifier = Modifier
                                     .align(Alignment.CenterEnd)
@@ -231,7 +268,9 @@ fun RoomDetailScreen(
                                     Icon(
                                         Icons.Default.ChevronRight,
                                         contentDescription = "Next",
-                                        modifier = Modifier.padding(8.dp).size(24.dp),
+                                        modifier = Modifier
+                                            .padding(8.dp)
+                                            .size(24.dp),
                                         tint = Color.Black
                                     )
                                 }
@@ -259,11 +298,14 @@ fun RoomDetailScreen(
                                 tint = Color.White.copy(alpha = 0.7f)
                             )
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text("No Image", fontSize = 16.sp, color = Color.White.copy(alpha = 0.7f))
+                            Text(
+                                "No Image",
+                                fontSize = 16.sp,
+                                color = Color.White.copy(alpha = 0.7f)
+                            )
                         }
                     }
                 }
-
 
 
 //                // Room Image Placeholder
@@ -564,9 +606,44 @@ fun RoomDetailScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+//                // Book Now Button
+//                Button(
+//                    onClick = { onBookNow(room, selectedQuantity) },
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .height(56.dp)
+//                        .padding(horizontal = 16.dp),
+//                    shape = RoundedCornerShape(12.dp),
+//                    colors = ButtonDefaults.buttonColors(
+//                        containerColor = Color(0xFF2196F3)
+//                    )
+//                ) {
+//                    Icon(
+//                        Icons.Default.Payment,
+//                        contentDescription = null,
+//                        modifier = Modifier.size(24.dp)
+//                    )
+//                    Spacer(modifier = Modifier.width(8.dp))
+//                    Text(
+//                        "Book Now - $${"%.2f".format(totalPrice)}",
+//                        fontSize = 18.sp,
+//                        fontWeight = FontWeight.Bold
+//                    )
+//                }
+
+
                 // Book Now Button
+                val isLocking = bookNowState is BookNowState.Locking
                 Button(
-                    onClick = { onBookNow(room, selectedQuantity) },
+                    onClick = {
+                        viewModel.onBookNow(
+                            userId   = userId,
+                            roomId   = room.roomId,
+                            checkIn  = checkIn,
+                            checkOut = checkOut
+                        )
+                    },
+                    enabled = !isLocking,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp)
@@ -576,17 +653,31 @@ fun RoomDetailScreen(
                         containerColor = Color(0xFF2196F3)
                     )
                 ) {
-                    Icon(
-                        Icons.Default.Payment,
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        "Book Now - $${"%.2f".format(totalPrice)}",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    if (isLocking) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            "Checking availability...",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    } else {
+                        Icon(
+                            Icons.Default.Payment,
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            "Book Now - ${"$"}${"%.2f".format(totalPrice)}",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))

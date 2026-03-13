@@ -17,7 +17,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
-class   UserApi {
+class UserApi {
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
@@ -223,7 +223,6 @@ class   UserApi {
     }
 
 
-
     private fun parseUserFromJson(jsonString: String): UserDto {
         val jsonObject = JSONObject(jsonString)
         val dataObject = jsonObject.getJSONObject("data")
@@ -257,13 +256,13 @@ class   UserApi {
         (0 until arr.length()).map { i ->
             val o = arr.getJSONObject(i)
             UserMessageDto(
-                messageId   = o.getInt("messageId"),
-                senderId    = o.getInt("senderId"),
-                senderName  = o.getString("senderName"),
-                senderRole  = o.optString("senderRole", "USER"),
+                messageId = o.getInt("messageId"),
+                senderId = o.getInt("senderId"),
+                senderName = o.getString("senderName"),
+                senderRole = o.optString("senderRole", "USER"),
                 messageText = o.getString("messageText"),
-                isRead      = o.getBoolean("isRead"),
-                createdAt   = o.getString("createdAt")
+                isRead = o.getBoolean("isRead"),
+                createdAt = o.getString("createdAt")
             )
         }
 }

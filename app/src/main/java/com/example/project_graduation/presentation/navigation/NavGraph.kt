@@ -40,11 +40,13 @@ import com.example.project_graduation.presentation.login.LoginScreen
 import com.example.project_graduation.presentation.login.LoginViewModel
 import com.example.project_graduation.presentation.main.MainUserScreen
 import com.example.project_graduation.presentation.payment.PaymentScreen
+import com.example.project_graduation.presentation.payment.PaymentViewModel
 import com.example.project_graduation.presentation.register.RegisterScreen
 import com.example.project_graduation.presentation.register.RegisterViewModel
 import com.example.project_graduation.presentation.profile.ProfileScreen
 import com.example.project_graduation.presentation.profile.ProfileViewModel
 import com.example.project_graduation.presentation.room.RoomDetailScreen
+import com.example.project_graduation.presentation.room_detail.BookNowState
 import com.example.project_graduation.presentation.room_detail.RoomDetailViewModel
 import com.example.project_graduation.presentation.staff.StaffScreen
 import com.example.project_graduation.presentation.staff.StaffViewModel
@@ -136,7 +138,7 @@ sealed class Screen(val route: String) {
     }
 
     object Payment : Screen(
-        "payment/{roomId}/{hotelId}/{hotelName}/{quantity}/{pricePerNight}/{totalNights}/{checkIn}/{checkOut}/{roomNumber}/{roomType}/{floor}/{status}/{basePrice}/{capacity}"
+        "payment/{roomId}/{hotelId}/{hotelName}/{quantity}/{pricePerNight}/{totalNights}/{checkIn}/{checkOut}/{roomNumber}/{roomType}/{floor}/{status}/{basePrice}/{capacity}/{sessionId}/{timeoutSeconds}"
     ) {
         fun createRoute(
             roomId: Int,
@@ -152,9 +154,11 @@ sealed class Screen(val route: String) {
             floor: Int?,
             status: String?,
             basePrice: Double?,
-            capacity: Int?
+            capacity: Int?,
+            sessionId: String,
+            timeoutSeconds: Int
         ) =
-            "payment/$roomId/$hotelId/$hotelName/$quantity/$pricePerNight/$totalNights/$checkIn/$checkOut/${roomNumber}/$roomType/${floor}/${status ?: "null"}/${basePrice ?: 0.0}/${capacity ?: 0}"
+            "payment/$roomId/$hotelId/$hotelName/$quantity/$pricePerNight/$totalNights/$checkIn/$checkOut/${roomNumber}/$roomType/${floor}/${status ?: "null"}/${basePrice ?: 0.0}/${capacity ?: 0}/$sessionId/$timeoutSeconds"
     }
 
     object Booking : Screen("bookings")
@@ -186,6 +190,7 @@ fun NavGraph(
     bookingsManagementViewModel: BookingsManagementViewModel,
     roomsManagementViewModel: RoomsManagementViewModel,
     roomDetailViewModel: RoomDetailViewModel,
+    paymentViewModel: PaymentViewModel,
 
     staffViewModel: StaffViewModel,
     staffApi: StaffApi,
@@ -346,7 +351,7 @@ fun NavGraph(
                     navController.popBackStack()
                 },
                 onRegisterSuccess = {
-                    navController.navigate(Screen.Home.route) {
+                    navController.navigate(Screen.MainUser.route) {
                         popUpTo(Screen.Register.route) { inclusive = true }
                     }
                 }
@@ -727,6 +732,44 @@ fun NavGraph(
                 emptyList()
             }
 
+            val userId = remember { runBlocking { preferencesManager.getUser()?.userId ?: 0 } }
+
+            val bookNowState by roomDetailViewModel.bookNowState.collectAsState()
+
+            LaunchedEffect(bookNowState) {
+                if (bookNowState is BookNowState.Success) {
+                    val success = bookNowState as BookNowState.Success
+                    navController.navigate(
+                        Screen.Payment.createRoute(
+                            roomId = args?.getInt("roomId") ?: 0,
+                            hotelId = args?.getInt("hotelId") ?: 0,
+                            hotelName = URLDecoder.decode(
+                                args?.getString("hotelName") ?: "",
+                                "UTF-8"
+                            ),
+                            quantity = 1,
+                            pricePerNight = args?.getString("pricePerNight")?.toDoubleOrNull()
+                                ?: 0.0,
+                            totalNights = args?.getInt("totalNights") ?: 1,
+                            checkIn = args?.getString("checkIn") ?: "",
+                            checkOut = args?.getString("checkOut") ?: "",
+                            roomNumber = args?.getString("roomNumber") ?: "",
+                            roomType = URLDecoder.decode(
+                                args?.getString("roomType") ?: "",
+                                "UTF-8"
+                            ),
+                            floor = args?.getInt("floor") ?: 0,
+                            status = args?.getString("status"),
+                            basePrice = args?.getString("basePrice")?.toDoubleOrNull(),
+                            capacity = args?.getInt("capacity") ?: 0,
+                            sessionId = success.sessionId,
+                            timeoutSeconds = success.timeoutSeconds
+                        )
+                    )
+                    roomDetailViewModel.resetBookNowState()
+                }
+            }
+
             val room = Room(
                 roomId = args?.getInt("roomId") ?: 0,
                 hotelId = args?.getInt("hotelId") ?: 0,
@@ -758,29 +801,31 @@ fun NavGraph(
                 totalNights = args?.getInt("totalNights") ?: 1,
                 checkIn = args?.getString("checkIn") ?: "",
                 checkOut = args?.getString("checkOut") ?: "",
+                userId = userId,
                 viewModel = roomDetailViewModel,
                 onBack = { navController.popBackStack() },
-                onBookNow = { room, quantity ->
-                    navController.navigate(
-                        Screen.Payment.createRoute(
-                            roomId = room.roomId,
-                            hotelId = room.hotelId,
-                            hotelName = hotelName,
-                            quantity = quantity,
-                            pricePerNight = args?.getString("pricePerNight")?.toDoubleOrNull()
-                                ?: 0.0,
-                            totalNights = args?.getInt("totalNights") ?: 1,
-                            checkIn = args?.getString("checkIn") ?: "",
-                            checkOut = args?.getString("checkOut") ?: "",
-                            roomNumber = room.roomNumber,
-                            roomType = room.roomType,
-                            floor = room.floor,
-                            status = room.status,
-                            basePrice = room.basePrice,
-                            capacity = room.capacity
-                        )
-                    )
-                }
+                onBookNow = { _, _ -> }
+                //                onBookNow = { room, quantity ->
+//                    navController.navigate(
+//                        Screen.Payment.createRoute(
+//                            roomId = room.roomId,
+//                            hotelId = room.hotelId,
+//                            hotelName = hotelName,
+//                            quantity = quantity,
+//                            pricePerNight = args?.getString("pricePerNight")?.toDoubleOrNull()
+//                                ?: 0.0,
+//                            totalNights = args?.getInt("totalNights") ?: 1,
+//                            checkIn = args?.getString("checkIn") ?: "",
+//                            checkOut = args?.getString("checkOut") ?: "",
+//                            roomNumber = room.roomNumber,
+//                            roomType = room.roomType,
+//                            floor = room.floor,
+//                            status = room.status,
+//                            basePrice = room.basePrice,
+//                            capacity = room.capacity
+//                        )
+//                    )
+//                }
             )
         }
 
@@ -801,10 +846,14 @@ fun NavGraph(
                 navArgument("floor") { type = NavType.IntType },
                 navArgument("status") { type = NavType.StringType },
                 navArgument("basePrice") { type = NavType.StringType },
-                navArgument("capacity") { type = NavType.IntType }
+                navArgument("capacity") { type = NavType.IntType },
+                navArgument("sessionId") { type = NavType.StringType },
+                navArgument("timeoutSeconds") { type = NavType.IntType }
             )
         ) { backStackEntry ->
             val args = backStackEntry.arguments
+            val sessionId = args?.getString("sessionId") ?: ""
+            val timeoutSeconds = args?.getInt("timeoutSeconds") ?: 600
 
             val room = Room(
                 roomId = args?.getInt("roomId") ?: 0,
@@ -829,6 +878,12 @@ fun NavGraph(
                 StandardCharsets.UTF_8.toString()
             )
 
+            LaunchedEffect(sessionId) {
+                if (sessionId.isNotEmpty()) {
+                    paymentViewModel.initWithSession(sessionId, timeoutSeconds)
+                }
+            }
+
             PaymentScreen(
                 room = room,
                 quantity = args?.getInt("quantity") ?: 1,
@@ -838,7 +893,11 @@ fun NavGraph(
                 checkOut = args?.getString("checkOut") ?: "",
                 hotelName = hotelName,
                 preferencesManager = preferencesManager,
-                onBack = { navController.popBackStack() },
+                viewModel =  paymentViewModel,
+                onBack = {
+                    paymentViewModel.cancelSession()
+                    roomDetailViewModel.resetBookNowState()
+                    navController.popBackStack() },
                 onPaymentSuccess = { bookingId ->
                     // Navigate to booking confirmation or home
                     navController.navigate(Screen.MainUser.route) {
@@ -893,7 +952,7 @@ fun NavGraph(
             // rồi load dashboard stats, bookings, rooms, conversations
             LaunchedEffect(Unit) {
                 val staffLocal = preferencesManager.getStaffInfo()
-                val user       = preferencesManager.getUser()
+                val user = preferencesManager.getUser()
 
                 if (staffLocal != null && user != null) {
                     staffDashboardViewModel.initFromPrefs()
@@ -902,9 +961,9 @@ fun NavGraph(
                     staffRoomsViewModel.loadRooms(staffLocal.hotelId)
                     staffBookingsViewModel.startPolling(staffLocal.hotelId)
                     staffChatViewModel.init(
-                        staffId   = user.userId,
+                        staffId = user.userId,
                         staffName = user.username,
-                        hotelId   = staffLocal.hotelId
+                        hotelId = staffLocal.hotelId
                     )
                 }
             }
@@ -912,9 +971,9 @@ fun NavGraph(
             StaffScreen(
                 staffViewModel = staffViewModel,
                 dashboardViewModel = staffDashboardViewModel,
-                bookingsViewModel  = staffBookingsViewModel,
-                roomsViewModel     = staffRoomsViewModel,
-                chatViewModel      = staffChatViewModel,
+                bookingsViewModel = staffBookingsViewModel,
+                roomsViewModel = staffRoomsViewModel,
+                chatViewModel = staffChatViewModel,
                 profileViewModel = profileViewModel,
                 initialTab = 0,
                 onLogout = {

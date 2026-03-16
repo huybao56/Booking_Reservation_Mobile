@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -22,6 +23,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.project_graduation.data.repository.AuthRepositoryImpl
@@ -45,9 +47,23 @@ fun HomeScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val searchCriteria by viewModel.searchCriteria.collectAsState()
 
-    LaunchedEffect(Unit) {
-        viewModel.loadHotels()
+    var searchQuery by remember { mutableStateOf("") }
+
+    val filteredHotels = remember(hotels, searchQuery) {
+        if (searchQuery.isBlank()) {
+            hotels
+        } else {
+            hotels.filter { it.hotelName.startsWith(searchQuery, ignoreCase = true) }
+        }
     }
+
+    // Log mỗi khi searchCriteria thay đổi
+    LaunchedEffect(searchCriteria) {
+        Log.d("ContentValues", "HomeScreen searchCriteria changed: $searchCriteria")
+    }
+//    LaunchedEffect(Unit) {
+//        viewModel.loadHotels()
+//    }
 
     LaunchedEffect(hotels) {
         Log.d("HomeScreen", "Hotels count: ${hotels.size}")
@@ -146,11 +162,11 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(20.dp))
 
                 OutlinedTextField(
-                    value = "",
-                    onValueChange = { },
+                    value = searchQuery,
+                    onValueChange = {  searchQuery = it },
                     placeholder = {
                         Text(
-                            "Search Your House or Location...",
+                            "Search hotel by name...",
                             color = Color.Gray,
                             fontSize = 14.sp
                         )
@@ -161,6 +177,17 @@ fun HomeScreen(
                             contentDescription = null,
                             tint = Color(0xFF2196F3)
                         )
+                    },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = "Clear search",
+                                    tint = Color.Gray
+                                )
+                            }
+                        }
                     },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
@@ -215,8 +242,33 @@ fun HomeScreen(
                         CircularProgressIndicator()
                     }
                 }
-            } else {
-                items(hotels) { hotel ->
+            }else if (filteredHotels.isEmpty() && searchQuery.isNotBlank()) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                Icons.Default.SearchOff,
+                                contentDescription = null,
+                                modifier = Modifier.size(48.dp),
+                                tint = Color.LightGray
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "No hotels found for \"$searchQuery\"",
+                                color = Color.Gray,
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+                }
+            }
+            else {
+                items(filteredHotels) { hotel ->
                     HotelCard(
                         hotel,
                         onClick = { onNavigateToHotelDetail(hotel.hotelId) }
@@ -355,28 +407,28 @@ fun HotelCard(
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.Absolute.Right
                 ) {
-                    // Location Tag
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .background(Color.White.copy(alpha = 0.9f), RoundedCornerShape(20.dp))
-                            .padding(horizontal = 12.dp, vertical = 6.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.LocationOn,
-                            contentDescription = null,
-                            tint = Color.Gray,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = hotel.hotelAddress ?: "No address",
-                            fontSize = 12.sp,
-                            color = Color.Gray
-                        )
-                    }
+//                    // Location Tag
+//                    Row(
+//                        verticalAlignment = Alignment.CenterVertically,
+//                        modifier = Modifier
+//                            .background(Color.White.copy(alpha = 0.9f), RoundedCornerShape(20.dp))
+//                            .padding(horizontal = 12.dp, vertical = 6.dp)
+//                    ) {
+//                        Icon(
+//                            imageVector = Icons.Default.LocationOn,
+//                            contentDescription = null,
+//                            tint = Color.Gray,
+//                            modifier = Modifier.size(16.dp)
+//                        )
+//                        Spacer(modifier = Modifier.width(4.dp))
+//                        Text(
+//                            text = hotel.hotelAddress ?: "No address",
+//                            fontSize = 12.sp,
+//                            color = Color.Gray
+//                        )
+//                    }
 
                     // Favorite Button
                     IconButton(
@@ -440,47 +492,47 @@ fun HotelCard(
 }
 
 
-data class Category(
-    val icon: ImageVector,
-    val label: String
-)
+//data class Category(
+//    val icon: ImageVector,
+//    val label: String
+//)
 
-data class Property(
-    val name: String,
-    val price: String,
-    val location: String,
-    val isFavorite: Boolean
-)
+//data class Property(
+//    val name: String,
+//    val price: String,
+//    val location: String,
+//    val isFavorite: Boolean
+//)
 
-val categories = listOf(
-    Category(Icons.Default.Home, "Home"),
-    Category(Icons.Default.Build, "Apartment"),
-    Category(Icons.Default.BusinessCenter, "Villa"),
+//val categories = listOf(
+//    Category(Icons.Default.Home, "Home"),
+//    Category(Icons.Default.Build, "Apartment"),
+//    Category(Icons.Default.BusinessCenter, "Villa"),
 //    Category(Icons.Default.Cottage, "Bungalo"),
 //    Category(Icons.Default.Landscape, "Empty land"),
 //    Category(Icons.Default.Business, "Office")
-)
+//)
 
-val properties = listOf(
-    Property(
-        name = "Royal Apartment",
-        price = "$46,100.00",
-        location = "New York",
-        isFavorite = false
-    ),
-    Property(
-        name = "Luxury Villa",
-        price = "$125,000.00",
-        location = "Los Angeles",
-        isFavorite = true
-    ),
-    Property(
-        name = "Modern House",
-        price = "$78,500.00",
-        location = "Miami",
-        isFavorite = false
-    )
-)
+//val properties = listOf(
+//    Property(
+//        name = "Royal Apartment",
+//        price = "$46,100.00",
+//        location = "New York",
+//        isFavorite = false
+//    ),
+//    Property(
+//        name = "Luxury Villa",
+//        price = "$125,000.00",
+//        location = "Los Angeles",
+//        isFavorite = true
+//    ),
+//    Property(
+//        name = "Modern House",
+//        price = "$78,500.00",
+//        location = "Miami",
+//        isFavorite = false
+//    )
+//)
 
 
 @Composable
@@ -624,38 +676,38 @@ fun DateSelectionCard(
                 }
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Search Button
-            Button(
-                onClick = {
-                    val formatter = DateTimeFormatter.ISO_LOCAL_DATE
-                    onSearchClick(
-                        checkInDate.format(formatter),
-                        checkOutDate.format(formatter),
-                        numberOfGuests
-                    )
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF2196F3)
-                )
-            ) {
-                Icon(
-                    Icons.Default.Search,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    "Search Hotels",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+//            Spacer(modifier = Modifier.height(16.dp))
+//
+//            // Search Button
+//            Button(
+//                onClick = {
+//                    val formatter = DateTimeFormatter.ISO_LOCAL_DATE
+//                    onSearchClick(
+//                        checkInDate.format(formatter),
+//                        checkOutDate.format(formatter),
+//                        numberOfGuests
+//                    )
+//                },
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .height(50.dp),
+//                shape = RoundedCornerShape(12.dp),
+//                colors = ButtonDefaults.buttonColors(
+//                    containerColor = Color(0xFF2196F3)
+//                )
+//            ) {
+//                Icon(
+//                    Icons.Default.Search,
+//                    contentDescription = null,
+//                    modifier = Modifier.size(20.dp)
+//                )
+//                Spacer(modifier = Modifier.width(8.dp))
+//                Text(
+//                    "Search Hotels",
+//                    fontSize = 16.sp,
+//                    fontWeight = FontWeight.Bold
+//                )
+//            }
 
             // Night count
             val nights = java.time.temporal.ChronoUnit.DAYS.between(checkInDate, checkOutDate)
@@ -807,7 +859,7 @@ private fun GuestSelector(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Customers",
+                    text = "Guests",
                     fontSize = 14.sp,
                     color = Color.Gray
                 )
@@ -831,11 +883,13 @@ private fun GuestSelector(
                     )
                 }
 
+
                 Text(
                     text = numberOfGuests.toString(),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black,
+                    textAlign = TextAlign.Center,
                     modifier = Modifier.widthIn(min = 24.dp)
                 )
 

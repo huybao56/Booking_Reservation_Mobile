@@ -15,8 +15,9 @@ import java.util.concurrent.TimeUnit
 class RoomApi {
 
     private val client = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
+        .connectTimeout(60, TimeUnit.SECONDS)
+        .readTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(60, TimeUnit.SECONDS)
         .build()
 
     /**
@@ -157,7 +158,8 @@ class RoomApi {
             }
         } catch (e: Exception) {
             Log.e("RoomApi", "Error getting room availability: ${e.message}", e)
-            Result.success(getMockRoomAvailability(hotelId))
+//            Result.success(getMockRoomAvailability(hotelId))
+            Result.failure(e)
         }
     }
 
@@ -240,7 +242,8 @@ class RoomApi {
             }
         } catch (e: Exception) {
             Log.e("RoomApi", "Error getting rooms: ${e.message}", e)
-            Result.success(getMockRooms(hotelId))
+//            Result.success(getMockRooms(hotelId))
+            Result.failure(e)
         }
     }
 
@@ -302,105 +305,105 @@ class RoomApi {
         }
     }
 
-    private fun getMockRoomAvailability(hotelId: Int): List<RoomAvailabilityDto> {
-        return listOf(
-            // Standard Room 101
-            RoomAvailabilityDto(
-                room = RoomDto(
-                    roomId = 1,
-                    hotelId = hotelId,
-                    roomNumber = "101",
-                    roomType = "Standard Room",
-                    floor = 1,
-                    status = "AVAILABLE",
-                    basePrice = 250.0,
-                    capacity = 2,
-                    description = "Comfortable standard room with city view.",
-                    amenities = listOf("WiFi", "TV", "AC", "Mini Bar", "Safe"),
-//                    imageUrl = null
-                ),
-                availableUnits = 1,
-                pricePerNight = 250.0
-            ),
-            // Standard Room 202
-            RoomAvailabilityDto(
-                room = RoomDto(
-                    roomId = 2,
-                    hotelId = hotelId,
-                    roomNumber = "202",
-                    roomType = "Standard Room",
-                    floor = 2,
-                    status = "AVAILABLE",
-                    basePrice = 250.0,
-                    capacity = 2,
-                    description = "Comfortable standard room with city view.",
-                    amenities = listOf("WiFi", "TV", "AC", "Mini Bar", "Safe"),
-//                    imageUrl = null
-                ),
-                availableUnits = 1,
-                pricePerNight = 250.0
-            ),
-            // Standard Room 203
-            RoomAvailabilityDto(
-                room = RoomDto(
-                    roomId = 3,
-                    hotelId = hotelId,
-                    roomNumber = "203",
-                    roomType = "Standard Room",
-                    floor = 2,
-                    status = "AVAILABLE",
-                    basePrice = 250.0,
-                    capacity = 2,
-                    description = "Comfortable standard room with city view.",
-                    amenities = listOf("WiFi", "TV", "AC", "Mini Bar", "Safe"),
-//                    imageUrl = null
-                ),
-                availableUnits = 1,
-                pricePerNight = 250.0
-            ),
-            // Family Room 209
-            RoomAvailabilityDto(
-                room = RoomDto(
-                    roomId = 9,
-                    hotelId = hotelId,
-                    roomNumber = "209",
-                    roomType = "Family Room",
-                    floor = 2,
-                    status = "AVAILABLE",
-                    basePrice = 500.0,
-                    capacity = 4,
-                    description = "Large family room with multiple beds.",
-                    amenities = listOf("WiFi", "TV", "AC", "Kitchenette", "Two Bedrooms"),
-//                    imageUrl = null
-                ),
-                availableUnits = 1,
-                pricePerNight = 500.0
-            ),
-            // Deluxe Room 210
-            RoomAvailabilityDto(
-                room = RoomDto(
-                    roomId = 10,
-                    hotelId = hotelId,
-                    roomNumber = "210",
-                    roomType = "Deluxe Room",
-                    floor = 2,
-                    status = "AVAILABLE",
-                    basePrice = 300.0,
-                    capacity = 4,
-                    description = "Spacious deluxe room with balcony.",
-                    amenities = listOf("WiFi", "TV", "AC", "Mini Bar", "Balcony", "Coffee Maker"),
-//                    imageUrl = null
-                ),
-                availableUnits = 1,
-                pricePerNight = 300.0
-            )
-        )
-    }
+//    private fun getMockRoomAvailability(hotelId: Int): List<RoomAvailabilityDto> {
+//        return listOf(
+//            // Standard Room 101
+//            RoomAvailabilityDto(
+//                room = RoomDto(
+//                    roomId = 1,
+//                    hotelId = hotelId,
+//                    roomNumber = "101",
+//                    roomType = "Standard Room",
+//                    floor = 1,
+//                    status = "AVAILABLE",
+//                    basePrice = 250.0,
+//                    capacity = 2,
+//                    description = "Comfortable standard room with city view.",
+//                    amenities = listOf("WiFi", "TV", "AC", "Mini Bar", "Safe"),
+////                    imageUrl = null
+//                ),
+//                availableUnits = 1,
+//                pricePerNight = 250.0
+//            ),
+//            // Standard Room 202
+//            RoomAvailabilityDto(
+//                room = RoomDto(
+//                    roomId = 2,
+//                    hotelId = hotelId,
+//                    roomNumber = "202",
+//                    roomType = "Standard Room",
+//                    floor = 2,
+//                    status = "AVAILABLE",
+//                    basePrice = 250.0,
+//                    capacity = 2,
+//                    description = "Comfortable standard room with city view.",
+//                    amenities = listOf("WiFi", "TV", "AC", "Mini Bar", "Safe"),
+////                    imageUrl = null
+//                ),
+//                availableUnits = 1,
+//                pricePerNight = 250.0
+//            ),
+//            // Standard Room 203
+//            RoomAvailabilityDto(
+//                room = RoomDto(
+//                    roomId = 3,
+//                    hotelId = hotelId,
+//                    roomNumber = "203",
+//                    roomType = "Standard Room",
+//                    floor = 2,
+//                    status = "AVAILABLE",
+//                    basePrice = 250.0,
+//                    capacity = 2,
+//                    description = "Comfortable standard room with city view.",
+//                    amenities = listOf("WiFi", "TV", "AC", "Mini Bar", "Safe"),
+////                    imageUrl = null
+//                ),
+//                availableUnits = 1,
+//                pricePerNight = 250.0
+//            ),
+//            // Family Room 209
+//            RoomAvailabilityDto(
+//                room = RoomDto(
+//                    roomId = 9,
+//                    hotelId = hotelId,
+//                    roomNumber = "209",
+//                    roomType = "Family Room",
+//                    floor = 2,
+//                    status = "AVAILABLE",
+//                    basePrice = 500.0,
+//                    capacity = 4,
+//                    description = "Large family room with multiple beds.",
+//                    amenities = listOf("WiFi", "TV", "AC", "Kitchenette", "Two Bedrooms"),
+////                    imageUrl = null
+//                ),
+//                availableUnits = 1,
+//                pricePerNight = 500.0
+//            ),
+//            // Deluxe Room 210
+//            RoomAvailabilityDto(
+//                room = RoomDto(
+//                    roomId = 10,
+//                    hotelId = hotelId,
+//                    roomNumber = "210",
+//                    roomType = "Deluxe Room",
+//                    floor = 2,
+//                    status = "AVAILABLE",
+//                    basePrice = 300.0,
+//                    capacity = 4,
+//                    description = "Spacious deluxe room with balcony.",
+//                    amenities = listOf("WiFi", "TV", "AC", "Mini Bar", "Balcony", "Coffee Maker"),
+////                    imageUrl = null
+//                ),
+//                availableUnits = 1,
+//                pricePerNight = 300.0
+//            )
+//        )
+//    }
 
 
-    private fun getMockRooms(hotelId: Int): List<RoomDto> {
-        return getMockRoomAvailability(hotelId).map { it.room }
-    }
+//    private fun getMockRooms(hotelId: Int): List<RoomDto> {
+//        return getMockRoomAvailability(hotelId).map { it.room }
+//    }
 
 
     /**

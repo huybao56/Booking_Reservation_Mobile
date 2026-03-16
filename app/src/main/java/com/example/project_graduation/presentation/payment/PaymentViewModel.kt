@@ -53,6 +53,11 @@ class PaymentViewModel(
 
     private var countdownJob: Job? = null
 
+    // FIX: Lưu timestamp bắt đầu để tính toán chính xác hơn
+    private var countdownStartTime: Long = 0L
+    private var countdownInitialMs: Long = 0L
+
+
     private val wsClient = OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(0, TimeUnit.MILLISECONDS)
@@ -131,33 +136,66 @@ class PaymentViewModel(
 
     // ─── Countdown local mỗi giây ────────────────────────────────────────────
     private fun startLocalCountdown(initialMs: Long): Job {
-        return viewModelScope.launch {
+        countdownJob?.cancel() // Cancel countdown cũ nếu có
+
+        countdownStartTime = System.currentTimeMillis()
+        countdownInitialMs = initialMs
+
+        countdownJob = viewModelScope.launch {
+            while (true) {
+                // Tính thời gian đã trôi qua THỰC TẾ
+                val elapsedMs = System.currentTimeMillis() - countdownStartTime
+                val remaining = (countdownInitialMs - elapsedMs).coerceAtLeast(0L)
+
+                _remainingMs.value = remaining
+
+                // Kiểm tra điều kiện dừng
+                if (remaining <= 0L) {
+                    Log.d("PaymentVM", "Countdown ended → Expired")
+                    _uiState.value = PaymentUiState.Expired
+                    webSocket?.close(1000, "Session expired")
+                    webSocket = null
+                    break
+                }
+
+                if (_uiState.value !is PaymentUiState.ReadyToPay) {
+                    Log.d("PaymentVM", "State changed → Stop countdown")
+                    break
+                }
+
+                // Delay ngắn hơn để update UI mượt hơn (mỗi 100ms thay vì 1000ms)
+                kotlinx.coroutines.delay(100)
+            }
+        }
+
+        return countdownJob!!
+//        return viewModelScope.launch {
+////            var remaining = initialMs
+////            while (remaining > 0 && _uiState.value is PaymentUiState.ReadyToPay) {
+////                kotlinx.coroutines.delay(1_000)
+////                remaining -= 1_000
+////                _remainingMs.value = maxOf(remaining, 0L)
+////            }
+//
 //            var remaining = initialMs
-//            while (remaining > 0 && _uiState.value is PaymentUiState.ReadyToPay) {
+//            while (remaining > 0
+//                && _uiState.value is PaymentUiState.ReadyToPay
+//                && webSocket != null
+//            ) {
 //                kotlinx.coroutines.delay(1_000)
 //                remaining -= 1_000
 //                _remainingMs.value = maxOf(remaining, 0L)
 //            }
-
-            var remaining = initialMs
-            while (remaining > 0
-                && _uiState.value is PaymentUiState.ReadyToPay
-                && webSocket != null
-            ) {
-                kotlinx.coroutines.delay(1_000)
-                remaining -= 1_000
-                _remainingMs.value = maxOf(remaining, 0L)
-            }
-
-            if (_uiState.value is PaymentUiState.ReadyToPay && webSocket != null) {
-                Log.d("PaymentVM", "Countdown ended → closing WebSocket")
-                _remainingMs.value = 0L
-                _uiState.value = PaymentUiState.Expired
-                webSocket?.close(1000, "Session expired")
-                webSocket = null
-                countdownJob = null
-            }
-        }
+//
+//            if (_uiState.value is PaymentUiState.ReadyToPay && webSocket != null) {
+//                Log.d("PaymentVM", "Countdown ended → closing WebSocket")
+//                _remainingMs.value = 0L
+//                _uiState.value = PaymentUiState.Expired
+//                webSocket?.close(1000, "Session expired")
+//                webSocket = null
+//                countdownJob = null
+//            }
+//        }
     }
 
     // ─── User nhấn "Confirm & Pay" ────────────────────────────────────────────

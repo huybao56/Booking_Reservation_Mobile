@@ -35,13 +35,14 @@ fun RoomListScreen(
 ) {
     val state by viewModel.state.collectAsState()
 
-    // Load rooms when screen opens
-    LaunchedEffect(hotelId) {
-        viewModel.loadAvailableRoomTypes(hotelId)
-    }
 
     val filteredRooms = viewModel.getFilteredRooms()
     val roomTypes = state.roomAvailabilities.map { it.room.roomType  }.distinct()
+
+//    // Load rooms when screen opens
+//    LaunchedEffect(hotelId) {
+//        viewModel.loadAvailableRoomTypes(hotelId)
+//    }
 
     Scaffold(
         topBar = {

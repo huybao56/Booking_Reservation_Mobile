@@ -364,24 +364,37 @@ fun HotelDetailScreen(
                                         modifier = Modifier.weight(1f)
                                     )
 
-                                    // Favorite Button
+//                                    // Favorite Button
+//                                    IconButton(
+//                                        onClick = { viewModel.toggleFavorite() },
+//                                        modifier = Modifier
+//                                            .size(48.dp)
+//                                            .clip(CircleShape)
+//                                            .background(Color(0xFFF5F5F5))
+//                                    ) {
+//                                        Icon(
+//                                            imageVector = if (state.isFavorite)
+//                                                Icons.Default.Favorite
+//                                            else
+//                                                Icons.Default.FavoriteBorder,
+//                                            contentDescription = "Favorite",
+//                                            tint = if (state.isFavorite)
+//                                                Color.Red
+//                                            else
+//                                                Color.Gray
+//                                        )
+//                                    }
                                     IconButton(
-                                        onClick = { viewModel.toggleFavorite() },
+                                        onClick = { /* TODO: Mở chat */ },
                                         modifier = Modifier
                                             .size(48.dp)
                                             .clip(CircleShape)
                                             .background(Color(0xFFF5F5F5))
                                     ) {
                                         Icon(
-                                            imageVector = if (state.isFavorite)
-                                                Icons.Default.Favorite
-                                            else
-                                                Icons.Default.FavoriteBorder,
-                                            contentDescription = "Favorite",
-                                            tint = if (state.isFavorite)
-                                                Color.Red
-                                            else
-                                                Color.Gray
+                                            imageVector = Icons.Default.Chat,
+                                            contentDescription = "Chat",
+                                            tint = Color(0xFF1976D2)
                                         )
                                     }
                                 }

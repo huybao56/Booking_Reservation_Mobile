@@ -360,12 +360,13 @@ fun NavGraph(
 
 
         composable(Screen.MainUser.route) {
+            val initialTab = it.savedStateHandle.get<Int>("tab") ?: 0
             MainUserScreen(
                 chatViewModel = chatViewModel,
                 homeViewModel = homeViewModel,
                 profileViewModel = profileViewModel,
                 preferencesManager = preferencesManager,
-                initialTab = 0,
+                initialTab = initialTab,
                 onNavigateToHotelDetail = { hotelId ->
                     val criteria = homeViewModel.searchCriteria.value
 
@@ -621,6 +622,8 @@ fun NavGraph(
                     // Cập nhật lại search criteria trong HomeViewModel
                     homeViewModel.updateSearchCriteria(checkIn, checkOut, guests)
 
+                    navController.getBackStackEntry(Screen.MainUser.route)
+                        .savedStateHandle["tab"] = 0
                     // Pop back về MainUserScreen
                     navController.popBackStack(Screen.MainUser.route, inclusive = false)
 
@@ -665,6 +668,7 @@ fun NavGraph(
             // Cập nhật dates cho RoomListViewModel
             LaunchedEffect(checkIn, checkOut) {
                 roomListViewModel.updateDates(checkIn, checkOut)
+                roomListViewModel.loadAvailableRoomTypes(hotelId)
             }
 
 
@@ -903,6 +907,7 @@ fun NavGraph(
                     navController.navigate(Screen.MainUser.route) {
                         popUpTo(Screen.MainUser.route) { inclusive = true }
                     }
+                    navController.currentBackStackEntry?.savedStateHandle?.set("tab", 1)
                 }
             )
         }

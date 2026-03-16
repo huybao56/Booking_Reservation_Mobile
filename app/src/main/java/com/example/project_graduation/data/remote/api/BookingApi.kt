@@ -262,7 +262,10 @@ class BookingApi {
                                 totalPrice = bookingObj.optDouble("totalPrice", 0.0),
                                 createdAt = bookingObj.optString("createdAt"),
                                 roomId = bookingObj.getInt("roomId"),
-                                bookingGroupId = bookingObj.optString("bookingGroupId", null)
+                                bookingGroupId = bookingObj.optString("bookingGroupId", null),
+
+                                roomNumber = bookingObj.optString("roomNumber", null).takeIf { it.isNotEmpty() },
+                                hotelName  = bookingObj.optString("hotelName",  null).takeIf { it.isNotEmpty() }
                             )
                         )
                     }
@@ -291,9 +294,92 @@ class BookingApi {
             totalPrice = dataObject.optDouble("totalPrice", 0.0),
             createdAt = dataObject.optString("createdAt"),
             roomId = dataObject.getInt("roomId"),
-            bookingGroupId = dataObject.optString("bookingGroupId", null)
+            bookingGroupId = dataObject.optString("bookingGroupId", null),
+
+            roomNumber = dataObject.optString("roomNumber", null).takeIf { it.isNotEmpty() },
+            hotelName  = dataObject.optString("hotelName",  null).takeIf { it.isNotEmpty() }
         )
     }
+
+
+    /**
+     * Update booking status (for cancellation)
+     */
+    suspend fun updateBookingStatus(
+        bookingId: Int,
+        status: String
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val jsonBody = JSONObject().apply {
+                put("status", status)
+            }
+
+            val requestBody = jsonBody.toString().toRequestBody("application/json".toMediaType())
+
+            val request = Request.Builder()
+                .url("${ApiConfig.BASE_URL}/bookings/$bookingId/status")
+                .patch(requestBody)
+                .build()
+
+            val response = client.newCall(request).execute()
+            val responseBody = response.body?.string()
+
+            Log.d("BookingApi", "Update booking status - Status: ${response.code}, Response: $responseBody")
+
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("HTTP ${response.code}: $responseBody"))
+            }
+        } catch (e: Exception) {
+            Log.e("BookingApi", "Error updating booking status: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Get room details by room ID (to get room number and hotel info)
+     */
+    suspend fun getRoomDetails(roomId: Int): Result<RoomDetailsDto> = withContext(Dispatchers.IO) {
+        try {
+            val request = Request.Builder()
+                .url("${ApiConfig.BASE_URL}/rooms/$roomId")
+                .get()
+                .build()
+
+            val response = client.newCall(request).execute()
+            val responseBody = response.body?.string()
+
+            Log.d("BookingApi", "Get room details - Status: ${response.code}, Response: $responseBody")
+
+            if (response.isSuccessful && responseBody != null) {
+                val jsonObject = JSONObject(responseBody)
+                val dataObject = jsonObject.getJSONObject("data")
+
+                val roomDetails = RoomDetailsDto(
+                    roomId = dataObject.getInt("roomId"),
+                    roomNumber = dataObject.optString("roomNumber", "N/A"),
+                    hotelId = dataObject.getInt("hotelId"),
+                    hotelName = null // Sẽ fetch sau nếu cần
+                )
+
+                Result.success(roomDetails)
+            } else {
+                Result.failure(Exception("HTTP ${response.code}"))
+            }
+        } catch (e: Exception) {
+            Log.e("BookingApi", "Error getting room details: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    // Data class cho room details
+    data class RoomDetailsDto(
+        val roomId: Int,
+        val roomNumber: String,
+        val hotelId: Int,
+        val hotelName: String?
+    )
 
 }
 

@@ -16,7 +16,10 @@ data class BookingDto(
     val totalPrice: Double,
     val createdAt: String,
     val roomId: Int,
-    val bookingGroupId: String?
+    val bookingGroupId: String?,
+
+    val roomNumber: String? = null,
+    val hotelName: String? = null
 )
 
 @Serializable

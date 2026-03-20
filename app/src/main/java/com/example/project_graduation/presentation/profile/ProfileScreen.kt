@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.sp
 fun ProfileScreen(
     viewModel: ProfileViewModel,
     onNavigateToBookings: () -> Unit = {},
+    onNavigateToEditProfile: () -> Unit = {},
     onBack: () -> Unit,
     onLogout: () -> Unit
 ) {
@@ -219,14 +220,14 @@ fun ProfileScreen(
                         ProfileMenuItem(
                             icon = Icons.Default.Person,
                             title = "Edit Profile",
-                            onClick = { }
+                            onClick = { onNavigateToEditProfile() }
                         )
-
-                        ProfileMenuItem(
-                            icon = Icons.Default.Lock,
-                            title = "Change Password",
-                            onClick = { }
-                        )
+//
+//                        ProfileMenuItem(
+//                            icon = Icons.Default.Lock,
+//                            title = "Change Password",
+//                            onClick = { }
+//                        )
 
                         ProfileMenuItem(
                             icon = Icons.Default.Notifications,

@@ -14,7 +14,7 @@ data class HotelDetailState(
     val hotel: Hotel? = null,
     val isLoading: Boolean = false,
     val error: String? = null,
-    val isFavorite: Boolean = false
+    val shouldOpenChat: Boolean = false
 )
 
 class HotelDetailViewModel(
@@ -46,7 +46,14 @@ class HotelDetailViewModel(
         }
     }
 
-    fun toggleFavorite() {
-        _state.value = _state.value.copy(isFavorite = !_state.value.isFavorite)
+    // ← THÊM FUNCTION NÀY
+    fun openChat() {
+        _state.value = _state.value.copy(shouldOpenChat = true)
+        Log.d("HotelDetailViewModel", "Opening chat for hotel: ${_state.value.hotel?.hotelName}")
+    }
+
+    // ← THÊM FUNCTION NÀY ĐỂ RESET STATE SAU KHI NAVIGATE
+    fun resetChatNavigation() {
+        _state.value = _state.value.copy(shouldOpenChat = false)
     }
 }

@@ -72,7 +72,7 @@ class MainActivity : ComponentActivity() {
         val authRepository = AuthRepositoryImpl(authApi, preferencesManager)
         val hotelRepository = HotelRepositoryImpl(hotelApi)
         val roomRepository = RoomRepositoryImpl(roomApi)
-        val userRepository = UserRepositoryImpl(userApi)
+        val userRepository = UserRepositoryImpl(userApi,preferencesManager)
         val bookingRepository = BookingRepositoryImpl(bookingApi, bookingPaymentApi)
 
 
@@ -87,7 +87,7 @@ class MainActivity : ComponentActivity() {
         val loginViewModel = LoginViewModel(loginUseCase)
         val registerViewModel = RegisterViewModel(registerUseCase)
         val homeViewModel = HomeViewModel(hotelRepository)
-        val profileViewModel = ProfileViewModel(getUserProfileUseCase, logoutUseCase)
+        val profileViewModel = ProfileViewModel(getUserProfileUseCase, logoutUseCase, userRepository)
         val hotelDetailViewModel = HotelDetailViewModel(hotelRepository)
         val roomListViewModel = RoomListViewModel(roomRepository)
         val hotelsManagementViewModel = HotelsManagementViewModel(hotelRepository, uploadApi)

@@ -41,15 +41,33 @@ fun MainUserScreen(
     preferencesManager: PreferencesManager,
     initialTab: Int = 0,
     onNavigateToHotelDetail: (Int) -> Unit,
+    onNavigateToEditProfile: () -> Unit,
     onLogout: () -> Unit
 ) {
     var selectedTab by remember { mutableStateOf(initialTab) }
+
+    // ← LISTEN pending tab change từ ChatViewModel
+    val pendingTab by chatViewModel.pendingTabChange.collectAsState()
+
+    LaunchedEffect(pendingTab) {
+        if (pendingTab != null) {
+            selectedTab = pendingTab!!
+            chatViewModel.clearPendingTab()
+        }
+    }
 
     // Log để debug
     LaunchedEffect(initialTab) {
         Log.d("MainUserScreen", "Initialized with tab: $initialTab")
     }
 
+// Trong NavGraph.kt hoặc MainScreen.kt
+    LaunchedEffect(Unit) {
+        val user = preferencesManager.getUser()
+        user?.let {
+            chatViewModel.init(it.userId, it.username)
+        }
+    }
 
     Scaffold(
 //        topBar = {
@@ -145,10 +163,10 @@ fun MainUserScreen(
 //                                }
 //                            }
 //                        ) {
-                            Icon(
-                                Icons.Default.ChatBubble,
-                                contentDescription = "Chat"
-                            )
+                        Icon(
+                            Icons.Default.ChatBubble,
+                            contentDescription = "Chat"
+                        )
 //                        }
                     },
                     label = { Text("Chat") },
@@ -190,6 +208,7 @@ fun MainUserScreen(
                     onNavigateToHotelDetail = onNavigateToHotelDetail,
                     onLogout = onLogout
                 )
+
                 1 -> BookingScreen(
                     preferencesManager = preferencesManager,
                     onBack = { selectedTab = 0 }
@@ -215,6 +234,7 @@ fun MainUserScreen(
                 3 -> ProfileScreen(
                     viewModel = profileViewModel,
                     onBack = { selectedTab = 0 },
+                    onNavigateToEditProfile = onNavigateToEditProfile,
                     onNavigateToBookings = {
                         selectedTab = 1  // ← Chỉ chuyển sang Bookings tab
                     },

@@ -97,6 +97,58 @@ class UserApi {
             }
         }
 
+
+    // ─── UPDATE USER PROFILE ────────────────────────────────────────────────────
+    // PUT /users/{userId}
+    // Body: { "username": "...", "email": "...", "phone": "..." }
+    // Nếu đổi password thì thêm: { "currentPassword": "...", "newPassword": "..." }
+    suspend fun updateUser(
+        userId: Int,
+        token: String,
+        username: String,
+        email: String,
+        phone: String?,
+        currentPassword: String? = null,
+        newPassword: String? = null
+    ): Result<UserDto> = withContext(Dispatchers.IO) {
+        Log.d("UserApi", "Updating user $userId")
+        try {
+            val body = JSONObject().apply {
+                put("username", username)
+                put("email", email)
+                if (!phone.isNullOrBlank()) put("phone", phone) else put("phone", JSONObject.NULL)
+                if (!currentPassword.isNullOrBlank()) put("currentPassword", currentPassword)
+                if (!newPassword.isNullOrBlank()) put("newPassword", newPassword)
+            }.toString().toRequestBody(json)
+
+            val request = Request.Builder()
+                .url("${ApiConfig.BASE_URL}/users/$userId")
+                .addHeader("Authorization", "Bearer $token")
+                .patch(body)
+                .build()
+
+            val response = client.newCall(request).execute()
+            val responseBody = response.body?.string()
+            Log.d("UserApi", "updateUser response [${response.code}]: $responseBody")
+
+            if (response.isSuccessful && responseBody != null) {
+                val user = parseUserFromJson(responseBody)
+                Result.success(user)
+            } else {
+                // Parse error message từ backend nếu có
+                val errorMsg = try {
+                    JSONObject(responseBody ?: "").optString("message", "Update failed")
+                } catch (e: Exception) {
+                    "Update failed (${response.code})"
+                }
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Log.e("UserApi", "updateUser error: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
     // POST /user/conversations  { userId, hotelId }  → conversationId
     suspend fun createOrGetConversation(
         userId: Int,

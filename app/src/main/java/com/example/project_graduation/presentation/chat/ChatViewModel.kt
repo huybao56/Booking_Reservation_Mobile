@@ -33,6 +33,11 @@ class ChatViewModel(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    private val _pendingTabChange = MutableStateFlow<Int?>(null)
+
+    val pendingTabChange: StateFlow<Int?> = _pendingTabChange.asStateFlow()
+
+
     var currentUserId   : Int    = 0    ; private set
     var currentUserName : String = "You"; private set
 
@@ -123,9 +128,29 @@ class ChatViewModel(
 
     // Gọi từ Hotel Detail page để bắt đầu chat
     fun openOrCreateConversation(hotelId: Int, hotelName: String) {
+        if (currentUserId == 0) {
+            _error.value = "Please login in order to chat"
+            Log.e("ChatVM", "Cannot open chat: userId is 0")
+            return
+        }
+
         viewModelScope.launch {
             _isLoading.value = true
-            Log.d("ChatVM", "▶ openOrCreateConversation hotelId=$hotelId name=$hotelName")
+            Log.d("ChatVM", "▶ openOrCreateConversation hotelId=$hotelId userId=$currentUserId")
+
+            // ← KIỂM TRA CONVERSATION ĐÃ TỒN TẠI
+            val existingConv = _conversations.value.find { it.hotelId == hotelId }
+
+            if (existingConv != null) {
+                Log.d("ChatVM", "  ✔ Found existing conversation: ${existingConv.id}")
+                openConversation(existingConv)
+                // ← REQUEST CHUYỂN SANG TAB CHAT
+                requestTabChange(2)
+                _isLoading.value = false
+                return@launch
+            }
+
+            // ← CHƯA CÓ → GỌI API TẠO MỚI
             userApi.createOrGetConversation(currentUserId, hotelId)
                 .onSuccess { dto ->
                     val conv = ChatConversation(
@@ -137,18 +162,49 @@ class ChatViewModel(
                         unreadCount = dto.unreadCount,
                         isOnline = dto.isOnline
                     )
-                    if (_conversations.value.none { it.id == conv.id }) {
-                        _conversations.value = _conversations.value + conv
-                    }
+
+                    _conversations.value = _conversations.value + conv
                     openConversation(conv)
-                    Log.d("ChatVM", "  ✔ conversationId=${conv.id}")
+
+                    // ← REQUEST CHUYỂN SANG TAB CHAT
+                    requestTabChange(2)
+
+                    Log.d("ChatVM", "  ✔ Created conversationId=${conv.id}")
                 }
                 .onFailure { e ->
                     _error.value = "Không thể mở chat: ${e.message}"
                     Log.e("ChatVM", "  ✗ ${e.message}")
                 }
+
             _isLoading.value = false
         }
+
+//        viewModelScope.launch {
+//            _isLoading.value = true
+//            Log.d("ChatVM", "▶ openOrCreateConversation hotelId=$hotelId name=$hotelName")
+//            userApi.createOrGetConversation(currentUserId, hotelId)
+//                .onSuccess { dto ->
+//                    val conv = ChatConversation(
+//                        id = dto.conversationId.toString(),
+//                        hotelId = dto.hotelId,
+//                        hotelName = dto.hotelName.ifBlank { hotelName },
+//                        lastMessage = dto.lastMessage ?: "",
+//                        lastMessageTime = parseTime(dto.lastMessageTime),
+//                        unreadCount = dto.unreadCount,
+//                        isOnline = dto.isOnline
+//                    )
+//                    if (_conversations.value.none { it.id == conv.id }) {
+//                        _conversations.value = _conversations.value + conv
+//                    }
+//                    openConversation(conv)
+//                    Log.d("ChatVM", "  ✔ conversationId=${conv.id}")
+//                }
+//                .onFailure { e ->
+//                    _error.value = "Không thể mở chat: ${e.message}"
+//                    Log.e("ChatVM", "  ✗ ${e.message}")
+//                }
+//            _isLoading.value = false
+//        }
     }
 
     fun closeConversation() {
@@ -202,6 +258,15 @@ class ChatViewModel(
                 }
         }
     }
+
+    fun requestTabChange(tabIndex: Int) {
+        _pendingTabChange.value = tabIndex
+    }
+
+    fun clearPendingTab() {
+        _pendingTabChange.value = null
+    }
+
 
     fun loadMessages(conversationId: String) {
         viewModelScope.launch {

@@ -22,17 +22,37 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.project_graduation.data.remote.ApiConfig
+import com.example.project_graduation.presentation.chat.ChatViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HotelDetailScreen(
     hotelId: Int,
     viewModel: HotelDetailViewModel,
+    chatViewModel: ChatViewModel,
     onBack: () -> Unit,
-    onBookNow: (Int, String) -> Unit
+    onBookNow: (Int, String) -> Unit,
+    onNavigateToChat: () -> Unit
 
 ) {
     val state by viewModel.state.collectAsState()
+
+    // ← THÊM LaunchedEffect để listen khi cần mở chat
+    LaunchedEffect(state.shouldOpenChat) {
+        if (state.shouldOpenChat && state.hotel != null) {
+            // Gọi ChatViewModel để tạo hoặc mở conversation
+            chatViewModel.openOrCreateConversation(
+                hotelId = state.hotel!!.hotelId,
+                hotelName = state.hotel!!.hotelName
+            )
+            // Navigate đến ChatScreen
+//            onNavigateToChat(state.hotel!!.hotelId, state.hotel!!.hotelName)
+            onNavigateToChat()
+            // Reset state
+            viewModel.resetChatNavigation()
+        }
+    }
+
 
     // Load hotel detail khi màn hình được tạo
     LaunchedEffect(hotelId) {
@@ -385,7 +405,7 @@ fun HotelDetailScreen(
 //                                        )
 //                                    }
                                     IconButton(
-                                        onClick = { /* TODO: Mở chat */ },
+                                        onClick = { viewModel.openChat() },
                                         modifier = Modifier
                                             .size(48.dp)
                                             .clip(CircleShape)

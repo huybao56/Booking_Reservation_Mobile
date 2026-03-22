@@ -34,6 +34,7 @@ fun ProfileScreen(
     viewModel: ProfileViewModel,
     onNavigateToBookings: () -> Unit = {},
     onNavigateToEditProfile: () -> Unit = {},
+    onNavigateToFavorites: () -> Unit = {},
     onBack: () -> Unit,
     onLogout: () -> Unit
 ) {
@@ -210,7 +211,7 @@ fun ProfileScreen(
                         Spacer(modifier = Modifier.height(24.dp))
 
                         Text(
-                            text = "Account Settings",
+                            text = "Settings",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.Black,
@@ -222,12 +223,6 @@ fun ProfileScreen(
                             title = "Edit Profile",
                             onClick = { onNavigateToEditProfile() }
                         )
-//
-//                        ProfileMenuItem(
-//                            icon = Icons.Default.Lock,
-//                            title = "Change Password",
-//                            onClick = { }
-//                        )
 
                         ProfileMenuItem(
                             icon = Icons.Default.Notifications,
@@ -235,32 +230,16 @@ fun ProfileScreen(
                             onClick = { }
                         )
 
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        Text(
-                            text = "More",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Black,
-                            modifier = Modifier.padding(bottom = 12.dp)
-                        )
-
                         ProfileMenuItem(
                             icon = Icons.Default.Favorite,
                             title = "Favorites",
-                            onClick = { }
+                            onClick = { onNavigateToFavorites() }
                         )
 
                         ProfileMenuItem(
                             icon = Icons.Default.History,
                             title = "Booking History",
                             onClick = { onNavigateToBookings()}
-                        )
-
-                        ProfileMenuItem(
-                            icon = Icons.Default.Settings,
-                            title = "Settings",
-                            onClick = { }
                         )
 
                         ProfileMenuItem(

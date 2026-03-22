@@ -14,6 +14,7 @@ import com.example.project_graduation.data.local.PreferencesManager
 import com.example.project_graduation.data.remote.api.AuthApi
 import com.example.project_graduation.data.remote.api.BookingApi
 import com.example.project_graduation.data.remote.api.BookingPaymentApi
+import com.example.project_graduation.data.remote.api.FavoriteApi
 import com.example.project_graduation.data.remote.api.HotelApi
 import com.example.project_graduation.data.remote.api.RoomApi
 import com.example.project_graduation.data.remote.api.UploadApi
@@ -41,7 +42,9 @@ import com.example.project_graduation.presentation.register.RegisterViewModel
 import com.example.project_graduation.presentation.room_detail.RoomDetailViewModel
 import com.example.project_graduation.presentation.staff.StaffViewModel
 import com.example.project_graduation.data.remote.api.StaffApi
+import com.example.project_graduation.data.repository.FavoriteRepositoryImpl
 import com.example.project_graduation.presentation.chat.ChatViewModel
+import com.example.project_graduation.presentation.favorite.FavoriteViewModel
 import com.example.project_graduation.presentation.payment.PaymentViewModel
 import com.example.project_graduation.presentation.staff.staff_booking_management.StaffBookingsViewModel
 import com.example.project_graduation.presentation.staff.staff_chat_management.StaffChatViewModel
@@ -63,7 +66,7 @@ class MainActivity : ComponentActivity() {
         val bookingPaymentApi = BookingPaymentApi()
         val uploadApi = UploadApi()
         val staffApi = StaffApi()
-
+        val favoriteApi = FavoriteApi()
 
 //        create preferencemanager
         val preferencesManager = PreferencesManager(applicationContext)
@@ -72,8 +75,9 @@ class MainActivity : ComponentActivity() {
         val authRepository = AuthRepositoryImpl(authApi, preferencesManager)
         val hotelRepository = HotelRepositoryImpl(hotelApi)
         val roomRepository = RoomRepositoryImpl(roomApi)
-        val userRepository = UserRepositoryImpl(userApi,preferencesManager)
+        val userRepository = UserRepositoryImpl(userApi, preferencesManager)
         val bookingRepository = BookingRepositoryImpl(bookingApi, bookingPaymentApi)
+        val favoriteRepository = FavoriteRepositoryImpl(favoriteApi)
 
 
 //        create usecases
@@ -87,7 +91,8 @@ class MainActivity : ComponentActivity() {
         val loginViewModel = LoginViewModel(loginUseCase)
         val registerViewModel = RegisterViewModel(registerUseCase)
         val homeViewModel = HomeViewModel(hotelRepository)
-        val profileViewModel = ProfileViewModel(getUserProfileUseCase, logoutUseCase, userRepository)
+        val profileViewModel =
+            ProfileViewModel(getUserProfileUseCase, logoutUseCase, userRepository)
         val hotelDetailViewModel = HotelDetailViewModel(hotelRepository)
         val roomListViewModel = RoomListViewModel(roomRepository)
         val hotelsManagementViewModel = HotelsManagementViewModel(hotelRepository, uploadApi)
@@ -96,6 +101,8 @@ class MainActivity : ComponentActivity() {
         val roomsManagementViewModel = RoomsManagementViewModel(roomRepository, uploadApi)
         val roomDetailViewModel = RoomDetailViewModel(roomRepository)
         val paymentViewModel = PaymentViewModel(preferencesManager)
+        val favoriteViewModel  = FavoriteViewModel(favoriteRepository)
+
 
 
         val staffViewModel = StaffViewModel()
@@ -103,7 +110,7 @@ class MainActivity : ComponentActivity() {
         val chatViewModel = ChatViewModel(userApi)
 
         // ViewModels — Staff (thay thế staffViewModel cũ)
-        val staffDashboardViewModel = StaffDashboardViewModel(preferencesManager,staffApi)
+        val staffDashboardViewModel = StaffDashboardViewModel(preferencesManager, staffApi)
         val staffBookingsViewModel = StaffBookingsViewModel(staffApi)
         val staffRoomsViewModel = StaffRoomsViewModel(staffApi)
         val staffChatViewModel = StaffChatViewModel(staffApi)
@@ -141,7 +148,8 @@ class MainActivity : ComponentActivity() {
                         staffRoomsViewModel = staffRoomsViewModel,
                         staffChatViewModel = staffChatViewModel,
 
-                        chatViewModel = chatViewModel
+                        chatViewModel = chatViewModel,
+                        favoriteViewModel = favoriteViewModel,
                     )
                 }
             }

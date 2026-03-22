@@ -31,6 +31,8 @@ import com.example.project_graduation.presentation.admin.user_management.UsersMa
 import com.example.project_graduation.presentation.booking.BookingScreen
 import com.example.project_graduation.presentation.chat.ChatViewModel
 import com.example.project_graduation.presentation.edit.EditProfileScreen
+import com.example.project_graduation.presentation.favorite.FavoriteScreen
+import com.example.project_graduation.presentation.favorite.FavoriteViewModel
 import com.example.project_graduation.presentation.room.RoomListScreen
 import com.example.project_graduation.presentation.room.RoomListViewModel
 import com.example.project_graduation.presentation.home.HomeScreen
@@ -174,6 +176,8 @@ sealed class Screen(val route: String) {
         }
     }
 
+    object Favorites : Screen("favorites")
+
     object Staff : Screen("staff")
 }
 
@@ -195,6 +199,7 @@ fun NavGraph(
     roomsManagementViewModel: RoomsManagementViewModel,
     roomDetailViewModel: RoomDetailViewModel,
     paymentViewModel: PaymentViewModel,
+    favoriteViewModel: FavoriteViewModel,
 
     staffViewModel: StaffViewModel,
     staffApi: StaffApi,
@@ -254,7 +259,10 @@ fun NavGraph(
         val isStaff = preferencesManager.isStaff()
         val user = preferencesManager.getUser()
 
-        Log.d("ContentValues", "User logged in: ${user?.userId} ${user?.username}, Role: ${user?.role}")
+        Log.d(
+            "ContentValues",
+            "User logged in: ${user?.userId} ${user?.username}, Role: ${user?.role}"
+        )
 
         startDestination = when {
             !isLoggedIn -> {
@@ -369,6 +377,7 @@ fun NavGraph(
                 chatViewModel = chatViewModel,
                 homeViewModel = homeViewModel,
                 profileViewModel = profileViewModel,
+                favoriteViewModel = favoriteViewModel,
                 preferencesManager = preferencesManager,
                 initialTab = initialTab,
                 onNavigateToHotelDetail = { hotelId ->
@@ -393,7 +402,8 @@ fun NavGraph(
                         )
                     )
                 },
-                onNavigateToEditProfile =  { navController.navigate("edit_profile") },
+                onNavigateToEditProfile = { navController.navigate("edit_profile") },
+                onNavigateToFavorites = { navController.navigate(Screen.Favorites.route) },
                 onLogout = {
                     homeViewModel.resetSearchCriteria()
                     navController.navigate(Screen.Login.route) {
@@ -521,6 +531,7 @@ fun NavGraph(
             HomeScreen(
                 viewModel = homeViewModel,
                 profileViewModel = profileViewModel,
+                favoriteViewModel = favoriteViewModel,
                 onNavigateToProfile = {
                     navController.navigate(Screen.Profile.route)
                 },
@@ -553,7 +564,10 @@ fun NavGraph(
                 },
                 onNavigateToEditProfile = {
                     navController.navigate(Screen.EditProfile.route)
-                                          },
+                },
+                onNavigateToFavorites = {
+                    navController.navigate(Screen.Favorites.route)
+                },
                 onBack = {
                     navController.popBackStack()
                 },
@@ -671,10 +685,10 @@ fun NavGraph(
 //                        popUpTo("chat") { inclusive = true }
 //                    }
                 }
-                    )
-                }
+            )
+        }
 
-                        // Room List Screen
+        // Room List Screen
 //        composable(
 //            route = Screen.RoomList.route,
 //            arguments = listOf(
@@ -684,170 +698,170 @@ fun NavGraph(
 //        ) { backStackEntry ->
 //            val hotelId = backStackEntry.arguments?.getInt("hotelId") ?: 0
 //            val hotelName = backStackEntry.arguments?.getString("hotelName") ?: ""
-                        composable (
-                        route = Screen.RoomList.route,
-                arguments = listOf(
-                    navArgument("hotelId") { type = NavType.IntType },
-                    navArgument("hotelName") { type = NavType.StringType },
-                    navArgument("checkIn") { type = NavType.StringType },
-                    navArgument("checkOut") { type = NavType.StringType },
-                    navArgument("guests") { type = NavType.IntType }
-                )
-            ) { backStackEntry ->
-                val hotelId = backStackEntry.arguments?.getInt("hotelId") ?: 0
-                val hotelName = URLDecoder.decode(
-                    backStackEntry.arguments?.getString("hotelName") ?: "",
-                    StandardCharsets.UTF_8.toString()
-                )
-                val checkIn = backStackEntry.arguments?.getString("checkIn") ?: ""
-                val checkOut = backStackEntry.arguments?.getString("checkOut") ?: ""
-                val guests = backStackEntry.arguments?.getInt("guests") ?: 2
+        composable(
+            route = Screen.RoomList.route,
+            arguments = listOf(
+                navArgument("hotelId") { type = NavType.IntType },
+                navArgument("hotelName") { type = NavType.StringType },
+                navArgument("checkIn") { type = NavType.StringType },
+                navArgument("checkOut") { type = NavType.StringType },
+                navArgument("guests") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val hotelId = backStackEntry.arguments?.getInt("hotelId") ?: 0
+            val hotelName = URLDecoder.decode(
+                backStackEntry.arguments?.getString("hotelName") ?: "",
+                StandardCharsets.UTF_8.toString()
+            )
+            val checkIn = backStackEntry.arguments?.getString("checkIn") ?: ""
+            val checkOut = backStackEntry.arguments?.getString("checkOut") ?: ""
+            val guests = backStackEntry.arguments?.getInt("guests") ?: 2
 
-                // Cập nhật dates cho RoomListViewModel
-                LaunchedEffect(checkIn, checkOut) {
-                    roomListViewModel.updateDates(checkIn, checkOut)
-                    roomListViewModel.loadAvailableRoomTypes(hotelId)
-                }
-
-
-                RoomListScreen(
-                    hotelId = hotelId,
-                    hotelName = hotelName,
-                    viewModel = roomListViewModel,
-                    onBack = { navController.popBackStack() },
-                    onRoomSelected = { roomAvailability ->
-                        val room = roomAvailability.room
-                        val state = roomListViewModel.state.value
-
-                        navController.navigate(
-                            Screen.RoomDetail.createRoute(
-                                roomId = room.roomId,
-                                hotelId = room.hotelId,
-                                hotelName = hotelName,
-                                availableUnits = roomAvailability.availableUnits,
-                                pricePerNight = roomAvailability.pricePerNight,
-                                totalNights = state.numberOfNights,
-                                checkIn = state.checkIn,
-                                checkOut = state.checkOut,
-                                roomNumber = room.roomNumber,
-                                roomType = room.roomType,
-                                floor = room.floor,
-                                status = room.status,
-                                basePrice = room.basePrice,
-                                capacity = room.capacity,
-                                amenities = room.amenities
-                            )
-                        )
-                    }
-                )
+            // Cập nhật dates cho RoomListViewModel
+            LaunchedEffect(checkIn, checkOut) {
+                roomListViewModel.updateDates(checkIn, checkOut)
+                roomListViewModel.loadAvailableRoomTypes(hotelId)
             }
 
 
-// Room Detail Screen
-            composable(
-                route = Screen.RoomDetail.route,
-                arguments = listOf(
-                    navArgument("roomId") { type = NavType.IntType },
-                    navArgument("hotelId") { type = NavType.IntType },
-                    navArgument("hotelName") { type = NavType.StringType },
-                    navArgument("availableUnits") { type = NavType.IntType },
-                    navArgument("pricePerNight") { type = NavType.StringType },
-                    navArgument("totalNights") { type = NavType.IntType },
-                    navArgument("checkIn") { type = NavType.StringType },
-                    navArgument("checkOut") { type = NavType.StringType },
-                    navArgument("roomNumber") { type = NavType.StringType },
-                    navArgument("roomType") { type = NavType.StringType },
-                    navArgument("floor") { type = NavType.IntType },
-                    navArgument("status") { type = NavType.StringType },
-                    navArgument("basePrice") { type = NavType.StringType },
-                    navArgument("capacity") { type = NavType.IntType },
-                    navArgument("amenities") { type = NavType.StringType }
-                )
-            ) { backStackEntry ->
-                val args = backStackEntry.arguments
+            RoomListScreen(
+                hotelId = hotelId,
+                hotelName = hotelName,
+                viewModel = roomListViewModel,
+                onBack = { navController.popBackStack() },
+                onRoomSelected = { roomAvailability ->
+                    val room = roomAvailability.room
+                    val state = roomListViewModel.state.value
 
-                val amenitiesString = args?.getString("amenities") ?: ""
-                val amenities = if (amenitiesString.isNotEmpty()) {
-                    URLDecoder.decode(amenitiesString, StandardCharsets.UTF_8.toString())
-                        .split(",")
-                } else {
-                    emptyList()
-                }
-
-                val userId = remember { runBlocking { preferencesManager.getUser()?.userId ?: 0 } }
-
-                val bookNowState by roomDetailViewModel.bookNowState.collectAsState()
-
-                LaunchedEffect(bookNowState) {
-                    if (bookNowState is BookNowState.Success) {
-                        val success = bookNowState as BookNowState.Success
-                        navController.navigate(
-                            Screen.Payment.createRoute(
-                                roomId = args?.getInt("roomId") ?: 0,
-                                hotelId = args?.getInt("hotelId") ?: 0,
-                                hotelName = URLDecoder.decode(
-                                    args?.getString("hotelName") ?: "",
-                                    "UTF-8"
-                                ),
-                                quantity = 1,
-                                pricePerNight = args?.getString("pricePerNight")?.toDoubleOrNull()
-                                    ?: 0.0,
-                                totalNights = args?.getInt("totalNights") ?: 1,
-                                checkIn = args?.getString("checkIn") ?: "",
-                                checkOut = args?.getString("checkOut") ?: "",
-                                roomNumber = args?.getString("roomNumber") ?: "",
-                                roomType = URLDecoder.decode(
-                                    args?.getString("roomType") ?: "",
-                                    "UTF-8"
-                                ),
-                                floor = args?.getInt("floor") ?: 0,
-                                status = args?.getString("status"),
-                                basePrice = args?.getString("basePrice")?.toDoubleOrNull(),
-                                capacity = args?.getInt("capacity") ?: 0,
-                                sessionId = success.sessionId,
-                                timeoutSeconds = success.timeoutSeconds
-                            )
+                    navController.navigate(
+                        Screen.RoomDetail.createRoute(
+                            roomId = room.roomId,
+                            hotelId = room.hotelId,
+                            hotelName = hotelName,
+                            availableUnits = roomAvailability.availableUnits,
+                            pricePerNight = roomAvailability.pricePerNight,
+                            totalNights = state.numberOfNights,
+                            checkIn = state.checkIn,
+                            checkOut = state.checkOut,
+                            roomNumber = room.roomNumber,
+                            roomType = room.roomType,
+                            floor = room.floor,
+                            status = room.status,
+                            basePrice = room.basePrice,
+                            capacity = room.capacity,
+                            amenities = room.amenities
                         )
-                        roomDetailViewModel.resetBookNowState()
-                    }
+                    )
                 }
+            )
+        }
 
-                val room = Room(
-                    roomId = args?.getInt("roomId") ?: 0,
-                    hotelId = args?.getInt("hotelId") ?: 0,
-                    roomNumber = args?.getString("roomNumber")?.takeIf { it != "null" }.toString(),
-                    roomType = URLDecoder.decode(
-                        args?.getString("roomType") ?: "",
-                        StandardCharsets.UTF_8.toString()
-                    ).takeIf { it != "null" }.toString(),
-                    floor = args?.getInt("floor")?.takeIf { it != 0 }!!,
-                    status = args?.getString("status")?.takeIf { it != "null" }!!,
-                    basePrice = args?.getString("basePrice")?.toDoubleOrNull()!!,
-                    capacity = args?.getInt("capacity")?.takeIf { it != 0 }!!,
-                    description = null,
-                    amenities = amenities,
-                    images = emptyList(),
-                    primaryImage = null
-                )
 
-                val hotelName = URLDecoder.decode(
-                    args?.getString("hotelName") ?: "",
+// Room Detail Screen
+        composable(
+            route = Screen.RoomDetail.route,
+            arguments = listOf(
+                navArgument("roomId") { type = NavType.IntType },
+                navArgument("hotelId") { type = NavType.IntType },
+                navArgument("hotelName") { type = NavType.StringType },
+                navArgument("availableUnits") { type = NavType.IntType },
+                navArgument("pricePerNight") { type = NavType.StringType },
+                navArgument("totalNights") { type = NavType.IntType },
+                navArgument("checkIn") { type = NavType.StringType },
+                navArgument("checkOut") { type = NavType.StringType },
+                navArgument("roomNumber") { type = NavType.StringType },
+                navArgument("roomType") { type = NavType.StringType },
+                navArgument("floor") { type = NavType.IntType },
+                navArgument("status") { type = NavType.StringType },
+                navArgument("basePrice") { type = NavType.StringType },
+                navArgument("capacity") { type = NavType.IntType },
+                navArgument("amenities") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val args = backStackEntry.arguments
+
+            val amenitiesString = args?.getString("amenities") ?: ""
+            val amenities = if (amenitiesString.isNotEmpty()) {
+                URLDecoder.decode(amenitiesString, StandardCharsets.UTF_8.toString())
+                    .split(",")
+            } else {
+                emptyList()
+            }
+
+            val userId = remember { runBlocking { preferencesManager.getUser()?.userId ?: 0 } }
+
+            val bookNowState by roomDetailViewModel.bookNowState.collectAsState()
+
+            LaunchedEffect(bookNowState) {
+                if (bookNowState is BookNowState.Success) {
+                    val success = bookNowState as BookNowState.Success
+                    navController.navigate(
+                        Screen.Payment.createRoute(
+                            roomId = args?.getInt("roomId") ?: 0,
+                            hotelId = args?.getInt("hotelId") ?: 0,
+                            hotelName = URLDecoder.decode(
+                                args?.getString("hotelName") ?: "",
+                                "UTF-8"
+                            ),
+                            quantity = 1,
+                            pricePerNight = args?.getString("pricePerNight")?.toDoubleOrNull()
+                                ?: 0.0,
+                            totalNights = args?.getInt("totalNights") ?: 1,
+                            checkIn = args?.getString("checkIn") ?: "",
+                            checkOut = args?.getString("checkOut") ?: "",
+                            roomNumber = args?.getString("roomNumber") ?: "",
+                            roomType = URLDecoder.decode(
+                                args?.getString("roomType") ?: "",
+                                "UTF-8"
+                            ),
+                            floor = args?.getInt("floor") ?: 0,
+                            status = args?.getString("status"),
+                            basePrice = args?.getString("basePrice")?.toDoubleOrNull(),
+                            capacity = args?.getInt("capacity") ?: 0,
+                            sessionId = success.sessionId,
+                            timeoutSeconds = success.timeoutSeconds
+                        )
+                    )
+                    roomDetailViewModel.resetBookNowState()
+                }
+            }
+
+            val room = Room(
+                roomId = args?.getInt("roomId") ?: 0,
+                hotelId = args?.getInt("hotelId") ?: 0,
+                roomNumber = args?.getString("roomNumber")?.takeIf { it != "null" }.toString(),
+                roomType = URLDecoder.decode(
+                    args?.getString("roomType") ?: "",
                     StandardCharsets.UTF_8.toString()
-                )
+                ).takeIf { it != "null" }.toString(),
+                floor = args?.getInt("floor")?.takeIf { it != 0 }!!,
+                status = args?.getString("status")?.takeIf { it != "null" }!!,
+                basePrice = args?.getString("basePrice")?.toDoubleOrNull()!!,
+                capacity = args?.getInt("capacity")?.takeIf { it != 0 }!!,
+                description = null,
+                amenities = amenities,
+                images = emptyList(),
+                primaryImage = null
+            )
 
-                RoomDetailScreen(
+            val hotelName = URLDecoder.decode(
+                args?.getString("hotelName") ?: "",
+                StandardCharsets.UTF_8.toString()
+            )
+
+            RoomDetailScreen(
 //                room = args?.getInt("roomId") ?: 0,
-                    room = room,
-                    availableUnits = args?.getInt("availableUnits") ?: 0,
-                    pricePerNight = args?.getString("pricePerNight")?.toDoubleOrNull() ?: 0.0,
-                    totalNights = args?.getInt("totalNights") ?: 1,
-                    checkIn = args?.getString("checkIn") ?: "",
-                    checkOut = args?.getString("checkOut") ?: "",
-                    userId = userId,
-                    viewModel = roomDetailViewModel,
-                    onBack = { navController.popBackStack() },
-                    onBookNow = { _, _ -> }
-                    //                onBookNow = { room, quantity ->
+                room = room,
+                availableUnits = args?.getInt("availableUnits") ?: 0,
+                pricePerNight = args?.getString("pricePerNight")?.toDoubleOrNull() ?: 0.0,
+                totalNights = args?.getInt("totalNights") ?: 1,
+                checkIn = args?.getString("checkIn") ?: "",
+                checkOut = args?.getString("checkOut") ?: "",
+                userId = userId,
+                viewModel = roomDetailViewModel,
+                onBack = { navController.popBackStack() },
+                onBookNow = { _, _ -> }
+                //                onBookNow = { room, quantity ->
 //                    navController.navigate(
 //                        Screen.Payment.createRoute(
 //                            roomId = room.roomId,
@@ -868,107 +882,129 @@ fun NavGraph(
 //                        )
 //                    )
 //                }
-                )
-            }
+            )
+        }
 
-            // Payment Screen
-            composable(
-                route = Screen.Payment.route,
-                arguments = listOf(
-                    navArgument("roomId") { type = NavType.IntType },
-                    navArgument("hotelId") { type = NavType.IntType },
-                    navArgument("hotelName") { type = NavType.StringType },
-                    navArgument("quantity") { type = NavType.IntType },
-                    navArgument("pricePerNight") { type = NavType.StringType },
-                    navArgument("totalNights") { type = NavType.IntType },
-                    navArgument("checkIn") { type = NavType.StringType },
-                    navArgument("checkOut") { type = NavType.StringType },
-                    navArgument("roomNumber") { type = NavType.StringType },
-                    navArgument("roomType") { type = NavType.StringType },
-                    navArgument("floor") { type = NavType.IntType },
-                    navArgument("status") { type = NavType.StringType },
-                    navArgument("basePrice") { type = NavType.StringType },
-                    navArgument("capacity") { type = NavType.IntType },
-                    navArgument("sessionId") { type = NavType.StringType },
-                    navArgument("timeoutSeconds") { type = NavType.IntType }
-                )
-            ) { backStackEntry ->
-                val args = backStackEntry.arguments
-                val sessionId = args?.getString("sessionId") ?: ""
-                val timeoutSeconds = args?.getInt("timeoutSeconds") ?: 600
+        // Payment Screen
+        composable(
+            route = Screen.Payment.route,
+            arguments = listOf(
+                navArgument("roomId") { type = NavType.IntType },
+                navArgument("hotelId") { type = NavType.IntType },
+                navArgument("hotelName") { type = NavType.StringType },
+                navArgument("quantity") { type = NavType.IntType },
+                navArgument("pricePerNight") { type = NavType.StringType },
+                navArgument("totalNights") { type = NavType.IntType },
+                navArgument("checkIn") { type = NavType.StringType },
+                navArgument("checkOut") { type = NavType.StringType },
+                navArgument("roomNumber") { type = NavType.StringType },
+                navArgument("roomType") { type = NavType.StringType },
+                navArgument("floor") { type = NavType.IntType },
+                navArgument("status") { type = NavType.StringType },
+                navArgument("basePrice") { type = NavType.StringType },
+                navArgument("capacity") { type = NavType.IntType },
+                navArgument("sessionId") { type = NavType.StringType },
+                navArgument("timeoutSeconds") { type = NavType.IntType }
+            )
+        ) { backStackEntry ->
+            val args = backStackEntry.arguments
+            val sessionId = args?.getString("sessionId") ?: ""
+            val timeoutSeconds = args?.getInt("timeoutSeconds") ?: 600
 
-                val room = Room(
-                    roomId = args?.getInt("roomId") ?: 0,
-                    hotelId = args?.getInt("hotelId") ?: 0,
-                    roomNumber = args?.getString("roomNumber")?.takeIf { it != "null" }.toString(),
-                    roomType = URLDecoder.decode(
-                        args?.getString("roomType") ?: "",
-                        StandardCharsets.UTF_8.toString()
-                    ).takeIf { it != "null" }.toString(),
-                    floor = args?.getInt("floor")?.takeIf { it != 0 }!!,
-                    status = args?.getString("status")?.takeIf { it != "null" }!!,
-                    basePrice = args?.getString("basePrice")?.toDoubleOrNull()!!,
-                    capacity = args?.getInt("capacity")?.takeIf { it != 0 }!!,
-                    description = null,
-                    amenities = emptyList(),
-                    images = emptyList(),
-                    primaryImage = null
-                )
-
-                val hotelName = URLDecoder.decode(
-                    args?.getString("hotelName") ?: "",
+            val room = Room(
+                roomId = args?.getInt("roomId") ?: 0,
+                hotelId = args?.getInt("hotelId") ?: 0,
+                roomNumber = args?.getString("roomNumber")?.takeIf { it != "null" }.toString(),
+                roomType = URLDecoder.decode(
+                    args?.getString("roomType") ?: "",
                     StandardCharsets.UTF_8.toString()
-                )
+                ).takeIf { it != "null" }.toString(),
+                floor = args?.getInt("floor")?.takeIf { it != 0 }!!,
+                status = args?.getString("status")?.takeIf { it != "null" }!!,
+                basePrice = args?.getString("basePrice")?.toDoubleOrNull()!!,
+                capacity = args?.getInt("capacity")?.takeIf { it != 0 }!!,
+                description = null,
+                amenities = emptyList(),
+                images = emptyList(),
+                primaryImage = null
+            )
 
-                LaunchedEffect(sessionId) {
-                    if (sessionId.isNotEmpty()) {
-                        paymentViewModel.initWithSession(sessionId, timeoutSeconds)
-                    }
+            val hotelName = URLDecoder.decode(
+                args?.getString("hotelName") ?: "",
+                StandardCharsets.UTF_8.toString()
+            )
+
+            LaunchedEffect(sessionId) {
+                if (sessionId.isNotEmpty()) {
+                    paymentViewModel.initWithSession(sessionId, timeoutSeconds)
                 }
-
-                PaymentScreen(
-                    room = room,
-                    quantity = args?.getInt("quantity") ?: 1,
-                    pricePerNight = args?.getString("pricePerNight")?.toDoubleOrNull() ?: 0.0,
-                    totalNights = args?.getInt("totalNights") ?: 1,
-                    checkIn = args?.getString("checkIn") ?: "",
-                    checkOut = args?.getString("checkOut") ?: "",
-                    hotelName = hotelName,
-                    preferencesManager = preferencesManager,
-                    viewModel = paymentViewModel,
-                    onBack = {
-                        paymentViewModel.cancelSession()
-                        roomDetailViewModel.resetBookNowState()
-                        navController.popBackStack()
-                    },
-                    onPaymentSuccess = { bookingId ->
-                        // Navigate to booking confirmation or home
-                        navController.navigate(Screen.MainUser.route) {
-                            popUpTo(Screen.MainUser.route) { inclusive = true }
-                        }
-                        navController.currentBackStackEntry?.savedStateHandle?.set("tab", 1)
-                    }
-                )
             }
 
+            PaymentScreen(
+                room = room,
+                quantity = args?.getInt("quantity") ?: 1,
+                pricePerNight = args?.getString("pricePerNight")?.toDoubleOrNull() ?: 0.0,
+                totalNights = args?.getInt("totalNights") ?: 1,
+                checkIn = args?.getString("checkIn") ?: "",
+                checkOut = args?.getString("checkOut") ?: "",
+                hotelName = hotelName,
+                preferencesManager = preferencesManager,
+                viewModel = paymentViewModel,
+                onBack = {
+                    paymentViewModel.cancelSession()
+                    roomDetailViewModel.resetBookNowState()
+                    navController.popBackStack()
+                },
+                onPaymentSuccess = { bookingId ->
+                    // Navigate to booking confirmation or home
+                    navController.navigate(Screen.MainUser.route) {
+                        popUpTo(Screen.MainUser.route) { inclusive = true }
+                    }
+                    navController.currentBackStackEntry?.savedStateHandle?.set("tab", 1)
+                }
+            )
+        }
 
-            composable(Screen.Booking.route) {
-                BookingScreen(
-                    preferencesManager = preferencesManager,
+
+        composable(Screen.Booking.route) {
+            BookingScreen(
+                preferencesManager = preferencesManager,
 //                onBack = {
 //                    navController.navigate(Screen.Home.route) {
 //                        popUpTo(Screen.Home.route) { inclusive = true }
 //                    }
 //                }
-                    onBack = {
-                        navController.popBackStack()
-                    }
-                )
-            }
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
 
 
+// Thêm composable:
+        composable(Screen.Favorites.route) {
+            FavoriteScreen(
+                viewModel = favoriteViewModel,
+                preferencesManager = preferencesManager,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToHotelDetail = { hotelId ->
+                    val criteria = homeViewModel.searchCriteria.value
+                    navController.navigate(
+                        Screen.HotelDetail.createRoute(
+                            hotelId,
+                            criteria.checkIn.ifEmpty { java.time.LocalDate.now().toString() },
+                            criteria.checkOut.ifEmpty {
+                                java.time.LocalDate.now().plusDays(1).toString()
+                            },
+                            if (criteria.guests <= 0) 2 else criteria.guests
+                        )
+                    )
+                }
+            )
+        }
 
-            composable(Screen.Staff.route) {
+
+        composable(Screen.Staff.route) {
 
 //            LaunchedEffect(Unit) {
 //                val hotelId = staffDashboardViewModel.staffInfo.value.hotelId
@@ -993,40 +1029,40 @@ fun NavGraph(
 //                    }
 //                }
 //            }
-                // Khi vào Staff screen: đọc thông tin từ DataStore (đã save lúc login)
-                // rồi load dashboard stats, bookings, rooms, conversations
-                LaunchedEffect(Unit) {
-                    val staffLocal = preferencesManager.getStaffInfo()
-                    val user = preferencesManager.getUser()
+            // Khi vào Staff screen: đọc thông tin từ DataStore (đã save lúc login)
+            // rồi load dashboard stats, bookings, rooms, conversations
+            LaunchedEffect(Unit) {
+                val staffLocal = preferencesManager.getStaffInfo()
+                val user = preferencesManager.getUser()
 
-                    if (staffLocal != null && user != null) {
-                        staffDashboardViewModel.initFromPrefs()
+                if (staffLocal != null && user != null) {
+                    staffDashboardViewModel.initFromPrefs()
 
-                        staffBookingsViewModel.loadBookings(staffLocal.hotelId)
-                        staffRoomsViewModel.loadRooms(staffLocal.hotelId)
-                        staffBookingsViewModel.startPolling(staffLocal.hotelId)
-                        staffChatViewModel.init(
-                            staffId = user.userId,
-                            staffName = user.username,
-                            hotelId = staffLocal.hotelId
-                        )
+                    staffBookingsViewModel.loadBookings(staffLocal.hotelId)
+                    staffRoomsViewModel.loadRooms(staffLocal.hotelId)
+                    staffBookingsViewModel.startPolling(staffLocal.hotelId)
+                    staffChatViewModel.init(
+                        staffId = user.userId,
+                        staffName = user.username,
+                        hotelId = staffLocal.hotelId
+                    )
+                }
+            }
+
+            StaffScreen(
+                staffViewModel = staffViewModel,
+                dashboardViewModel = staffDashboardViewModel,
+                bookingsViewModel = staffBookingsViewModel,
+                roomsViewModel = staffRoomsViewModel,
+                chatViewModel = staffChatViewModel,
+                profileViewModel = profileViewModel,
+                initialTab = 0,
+                onLogout = {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(0) { inclusive = true }
                     }
                 }
-
-                StaffScreen(
-                    staffViewModel = staffViewModel,
-                    dashboardViewModel = staffDashboardViewModel,
-                    bookingsViewModel = staffBookingsViewModel,
-                    roomsViewModel = staffRoomsViewModel,
-                    chatViewModel = staffChatViewModel,
-                    profileViewModel = profileViewModel,
-                    initialTab = 0,
-                    onLogout = {
-                        navController.navigate(Screen.Login.route) {
-                            popUpTo(0) { inclusive = true }
-                        }
-                    }
-                )
-            }
+            )
         }
     }
+}

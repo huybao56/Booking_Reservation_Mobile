@@ -26,12 +26,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.project_graduation.data.repository.AuthRepositoryImpl
 import com.example.project_graduation.domain.model.Hotel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import coil.compose.AsyncImage
 import com.example.project_graduation.data.remote.ApiConfig
+import com.example.project_graduation.presentation.favorite.FavoriteViewModel
 import com.example.project_graduation.presentation.profile.ProfileViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,6 +41,7 @@ import com.example.project_graduation.presentation.profile.ProfileViewModel
 fun HomeScreen(
     viewModel: HomeViewModel,
     profileViewModel: ProfileViewModel,
+    favoriteViewModel : FavoriteViewModel,
     onNavigateToProfile: (() -> Unit)? = null,
     onNavigateToHotelDetail: (Int) -> Unit,
     onLogout: () -> Unit
@@ -46,6 +49,18 @@ fun HomeScreen(
     val hotels by viewModel.hotels.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val searchCriteria by viewModel.searchCriteria.collectAsState()
+//    val profileState by profileViewModel.state.collectAsState()
+//    val favoriteState by favoriteViewModel.state.collectAsState()
+
+    val profileState by profileViewModel.state.collectAsStateWithLifecycle()
+    val favoriteState by favoriteViewModel.state.collectAsStateWithLifecycle()
+
+    // Reload favoriteIds mỗi khi màn hình resume (quay lại từ FavoriteScreen)
+    LaunchedEffect(profileState.user?.userId) {
+        profileState.user?.userId?.let { uid ->
+            favoriteViewModel.loadFavoriteIds(uid)
+        }
+    }
 
     var searchQuery by remember { mutableStateOf("") }
 
@@ -73,6 +88,8 @@ fun HomeScreen(
     LaunchedEffect(searchCriteria) {
         Log.d("ContentValues", "HomeScreen searchCriteria changed: $searchCriteria")
     }
+
+
 
     Scaffold(
         contentWindowInsets = WindowInsets(0),
@@ -163,7 +180,7 @@ fun HomeScreen(
 
                 OutlinedTextField(
                     value = searchQuery,
-                    onValueChange = {  searchQuery = it },
+                    onValueChange = { searchQuery = it },
                     placeholder = {
                         Text(
                             "Search hotel by name...",
@@ -242,7 +259,7 @@ fun HomeScreen(
                         CircularProgressIndicator()
                     }
                 }
-            }else if (filteredHotels.isEmpty() && searchQuery.isNotBlank()) {
+            } else if (filteredHotels.isEmpty() && searchQuery.isNotBlank()) {
                 item {
                     Box(
                         modifier = Modifier
@@ -266,11 +283,19 @@ fun HomeScreen(
                         }
                     }
                 }
-            }
-            else {
+            } else {
                 items(filteredHotels) { hotel ->
                     HotelCard(
                         hotel,
+//                        isFavorite = favoriteViewModel.isFavorite(hotel.hotelId),
+                        isFavorite = favoriteState.favoriteIds.contains(hotel.hotelId),
+                        onFavoriteClick = {
+//                            val userId = // lấy từ preferencesManager hoặc profileViewModel
+//                                favoriteViewModel.toggleFavorite(userId, hotel.hotelId)
+                            profileState.user?.userId?.let { uid ->
+                                favoriteViewModel.toggleFavorite(uid, hotel.hotelId)
+                            }
+                        },
                         onClick = { onNavigateToHotelDetail(hotel.hotelId) }
                     )
                     Spacer(modifier = Modifier.height(16.dp))
@@ -291,13 +316,14 @@ fun HomeScreen(
 }
 
 
-
 @Composable
 fun HotelCard(
     hotel: Hotel,
+    isFavorite: Boolean = false,
+    onFavoriteClick: () -> Unit = {},
     onClick: () -> Unit
 ) {
-    var isFavorite by remember { mutableStateOf(false) }
+//    var isFavorite by remember { mutableStateOf(false) }
 
     // Lấy ảnh primary hoặc ảnh đầu tiên
     val displayImageUrl = hotel.primaryImage
@@ -432,7 +458,7 @@ fun HotelCard(
 
                     // Favorite Button
                     IconButton(
-                        onClick = { isFavorite = !isFavorite },
+                        onClick = onFavoriteClick,
                         modifier = Modifier
                             .size(36.dp)
                             .background(Color.White.copy(alpha = 0.9f), CircleShape)

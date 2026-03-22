@@ -49,7 +49,7 @@ fun RoomDetailScreen(
     if (bookNowState is BookNowState.RoomLocked) {
         AlertDialog(
             onDismissRequest = { viewModel.resetBookNowState() },
-            title = { Text("Room Unavailable") },
+            title = { Text("Room Locked") },
             text = { Text("This room is currently being held by another user. Please try again in a few minutes.") },
             confirmButton = {
                 TextButton(onClick = { viewModel.resetBookNowState() }) {

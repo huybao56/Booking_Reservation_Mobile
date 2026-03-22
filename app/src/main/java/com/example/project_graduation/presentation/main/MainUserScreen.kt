@@ -28,6 +28,7 @@ import com.example.project_graduation.presentation.booking.BookingScreen
 import com.example.project_graduation.presentation.chat.ChatListScreen
 import com.example.project_graduation.presentation.chat.ChatScreen
 import com.example.project_graduation.presentation.chat.ChatViewModel
+import com.example.project_graduation.presentation.favorite.FavoriteViewModel
 import com.example.project_graduation.presentation.home.HomeScreen
 import com.example.project_graduation.presentation.home.HomeViewModel
 import com.example.project_graduation.presentation.profile.ProfileScreen
@@ -38,10 +39,12 @@ fun MainUserScreen(
     chatViewModel: ChatViewModel,
     homeViewModel: HomeViewModel,
     profileViewModel: ProfileViewModel,
+    favoriteViewModel: FavoriteViewModel,
     preferencesManager: PreferencesManager,
     initialTab: Int = 0,
     onNavigateToHotelDetail: (Int) -> Unit,
     onNavigateToEditProfile: () -> Unit,
+    onNavigateToFavorites: () -> Unit,
     onLogout: () -> Unit
 ) {
     var selectedTab by remember { mutableStateOf(initialTab) }
@@ -204,6 +207,7 @@ fun MainUserScreen(
                 0 -> HomeScreen(
                     viewModel = homeViewModel,
                     profileViewModel = profileViewModel,
+                    favoriteViewModel = favoriteViewModel ,
                     onNavigateToProfile = { selectedTab = 3 },
                     onNavigateToHotelDetail = onNavigateToHotelDetail,
                     onLogout = onLogout
@@ -238,6 +242,7 @@ fun MainUserScreen(
                     onNavigateToBookings = {
                         selectedTab = 1  // ← Chỉ chuyển sang Bookings tab
                     },
+                    onNavigateToFavorites   = onNavigateToFavorites,
                     onLogout = onLogout
                 )
             }
